@@ -1,0 +1,2436 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talk2 AI - Talk to Anyone, Anytime</title>
+    <link rel="icon" type="image/png" href="assets/logo1.png">
+    <meta name="theme-color" content="#f5f3ed">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" as="image" href="assets/logo1.png">
+    <link rel="preload" as="style"
+        href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
+        onload="this.onload=null;this.rel='stylesheet'">
+    <noscript>
+        <link rel="stylesheet"
+            href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap">
+    </noscript>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        #noise-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.035;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f5f3ed;
+            color: #2d2d2d;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* Smooth scroll behavior */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Performance optimizations */
+        * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Fade in animation for elements */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 30px, 0);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
+        }
+
+        @keyframes scaleIn {
+            from {
+                opacity: 0;
+                transform: scale3d(0.95, 0.95, 1);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale3d(1, 1, 1);
+            }
+        }
+
+        @keyframes slideInFromLeft {
+            from {
+                opacity: 0;
+                transform: translate3d(-20px, 0, 0);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
+
+        @keyframes slideInFromRight {
+            from {
+                opacity: 0;
+                transform: translate3d(20px, 0, 0);
+            }
+
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0);
+            }
+        }
+
+        /* Elements that will animate on scroll */
+        .animate-on-scroll {
+            opacity: 0;
+            transform: translate3d(0, 30px, 0);
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: opacity, transform;
+        }
+
+        .animate-on-scroll.visible {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+
+        /* Stagger animation delays */
+        .animate-on-scroll:nth-child(1) {
+            transition-delay: 0.05s;
+        }
+
+        .animate-on-scroll:nth-child(2) {
+            transition-delay: 0.1s;
+        }
+
+        .animate-on-scroll:nth-child(3) {
+            transition-delay: 0.15s;
+        }
+
+        .animate-on-scroll:nth-child(4) {
+            transition-delay: 0.2s;
+        }
+
+        .animate-on-scroll:nth-child(5) {
+            transition-delay: 0.25s;
+        }
+
+        .animate-on-scroll:nth-child(6) {
+            transition-delay: 0.3s;
+        }
+
+        /* Parallax effect */
+        .parallax {
+            transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform;
+        }
+
+        .navbar {
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform, background-color;
+        }
+
+
+
+        .nav-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+
+
+
+        .logo-box {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 50px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            display: flex;
+            align-items: center;
+            min-height: 44px;
+            will-change: transform, box-shadow;
+        }
+
+        .logo-box:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translate3d(0, -1px, 0);
+        }
+
+        .logo-box:active {
+            transform: translate3d(0, 0, 0);
+            transition-duration: 0.1s;
+        }
+
+        .logo {
+            display: inline-flex;
+            align-items: center;
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .logo-img {
+            width: 26px;
+            margin-right: 8px;
+        }
+
+        @keyframes rotate-clockwise {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .nav-center {
+            position: absolute;
+            /* Add this */
+            left: 50%;
+            /* Add this */
+            transform: translateX(-50%);
+            /* Add this */
+        }
+
+        .nav-links-box {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 50px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            min-height: 44px;
+        }
+
+        .nav-links-box a {
+            color: #2d2d2d;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            padding: 10px 24px;
+            border-radius: 50px;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            white-space: nowrap;
+            position: relative;
+            will-change: transform, background-color;
+        }
+
+        .nav-links-box a::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: 50px;
+            background: #f5f3ed;
+            opacity: 0;
+            transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: -1;
+        }
+
+        .nav-links-box a:hover::before {
+            opacity: 1;
+        }
+
+        .nav-links-box a:hover {
+            color: #4a7c59;
+            transform: translate3d(0, -1px, 0);
+        }
+
+        .nav-links-box a:active {
+            transform: translate3d(0, 0, 0);
+            transition-duration: 0.1s;
+        }
+
+        .nav-links-box a.active {
+            background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
+            color: white;
+        }
+
+        .nav-links-box a.active::before {
+            display: none;
+        }
+
+
+        .nav-auth-box {
+            display: flex;
+            justify-content: flex-end;
+            background: white;
+            padding: 8px 12px;
+            border-radius: 50px;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            gap: 8px;
+            align-items: center;
+            min-height: 44px;
+        }
+
+        .nav-auth-box a {
+            color: #2d2d2d;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 15px;
+            padding: 10px 24px;
+            border-radius: 50px;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+
+        .nav-auth-box a:first-child {
+            background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
+            color: white;
+        }
+
+        .nav-auth-box a:first-child:hover {
+            background: linear-gradient(135deg, #3d6849 0%, #2f5239 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(74, 124, 89, 0.3);
+        }
+
+        .nav-auth-box a:last-child:hover {
+            background: #f5f3ed;
+            color: #4a7c59;
+        }
+
+        .mobile-menu-btn {
+            display: none;
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            padding: 10px 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+        }
+
+        .mobile-menu-btn svg {
+            width: 24px;
+            height: 24px;
+            stroke: #2d2d2d;
+        }
+
+
+        @keyframes rotate {
+            from {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+
+            to {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+
+        .hero {
+            position: relative;
+            z-index: 1;
+        }
+
+        .hero {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 80px 24px 60px;
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 800;
+            color: #2d2d2d;
+            line-height: 1.1;
+            margin-bottom: 24px;
+            letter-spacing: -1.5px;
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+        }
+
+        .hero .gradient-text {
+            background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            display: inline-block;
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: #6b6b6b;
+            max-width: 680px;
+            margin: 0 auto 40px;
+            line-height: 1.6;
+            font-weight: 500;
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
+        }
+
+        .hero-cta {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s backwards;
+        }
+
+        .btn-primary {
+            padding: 16px 40px;
+            background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            box-shadow: 0 8px 20px rgba(74, 124, 89, 0.2);
+            text-decoration: none;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+            will-change: transform, box-shadow;
+            z-index: 1;
+        }
+
+        .btn-primary::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, #3d6849 0%, #2f5239 100%);
+            opacity: 0;
+            transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: -1;
+        }
+
+        .btn-primary::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: btnShine 3s ease-in-out infinite;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        @keyframes btnShine {
+            0% {
+                left: -100%;
+            }
+
+            50%,
+            100% {
+                left: 100%;
+            }
+        }
+
+        .btn-primary:hover::before {
+            opacity: 1;
+        }
+
+        .btn-primary:hover {
+            transform: translate3d(0, -2px, 0);
+            box-shadow: 0 12px 28px rgba(74, 124, 89, 0.3);
+        }
+
+        .btn-primary:active {
+            transform: translate3d(0, 0, 0);
+            box-shadow: 0 4px 12px rgba(74, 124, 89, 0.2);
+            transition-duration: 0.1s;
+        }
+
+        .btn-secondary {
+            padding: 16px 40px;
+            background: white;
+            color: #4a7c59;
+            border: 2px solid #4a7c59;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: color 0.3s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            text-decoration: none;
+            display: inline-block;
+            position: relative;
+            overflow: hidden;
+            will-change: transform, background-color;
+            z-index: 1;
+        }
+
+        .btn-secondary::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: #4a7c59;
+            transform: translate3d(0, 100%, 0);
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: -1;
+        }
+
+        .btn-secondary:hover::before {
+            transform: translate3d(0, 0, 0);
+        }
+
+        .btn-secondary:hover {
+            color: white;
+            transform: translate3d(0, -2px, 0);
+        }
+
+        .btn-secondary:active {
+            transform: translate3d(0, 0, 0);
+            transition-duration: 0.1s;
+        }
+
+        .trust-signals {
+            display: flex;
+            gap: 32px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            padding: 24px;
+            background: rgba(255, 255, 255, 0.5);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 16px;
+            max-width: 700px;
+            margin: 0 auto;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s backwards;
+        }
+
+        .trust-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+            color: #4a7c59;
+            font-weight: 600;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: default;
+        }
+
+        .trust-item:hover {
+            transform: translate3d(0, -2px, 0);
+        }
+
+        .trust-item svg {
+            width: 20px;
+            height: 20px;
+            transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .trust-item:hover svg {
+            transform: scale3d(1.1, 1.1, 1);
+        }
+
+        .section {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 80px 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 42px;
+            font-weight: 800;
+            color: #2d2d2d;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            font-size: 18px;
+            color: #6b6b6b;
+            max-width: 600px;
+            margin: 0 auto 60px;
+            font-weight: 500;
+            line-height: 1.6;
+        }
+
+        .problem-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 60px;
+        }
+
+        .problem-card {
+            background: white;
+            padding: 32px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform, box-shadow;
+        }
+
+        .problem-card:hover {
+            transform: translate3d(0, -8px, 0);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        .problem-card:hover .problem-icon {
+            transform: scale3d(1.05, 1.05, 1) rotate(5deg);
+        }
+
+        .problem-icon {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform;
+        }
+
+        .problem-icon svg {
+            width: 24px;
+            height: 24px;
+            stroke: white;
+            fill: none;
+        }
+
+        .problem-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d2d2d;
+            margin-bottom: 12px;
+        }
+
+        .problem-card p {
+            font-size: 15px;
+            color: #6b6b6b;
+            line-height: 1.6;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 32px;
+        }
+
+        .feature-card {
+            background: white;
+            padding: 32px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            text-align: center;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform, box-shadow;
+        }
+
+        .feature-card:hover {
+            transform: translate3d(0, -6px, 0);
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale3d(1.1, 1.1, 1);
+            background: linear-gradient(135deg, rgba(74, 124, 89, 0.15) 0%, rgba(61, 104, 73, 0.15) 100%);
+        }
+
+        .feature-card:hover .feature-icon svg {
+            transform: scale3d(1.1, 1.1, 1);
+        }
+
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            background: linear-gradient(135deg, rgba(74, 124, 89, 0.1) 0%, rgba(61, 104, 73, 0.1) 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform, background;
+        }
+
+        .feature-icon svg {
+            width: 32px;
+            height: 32px;
+            stroke: #4a7c59;
+            fill: none;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .feature-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d2d2d;
+            margin-bottom: 12px;
+        }
+
+        .feature-card p {
+            font-size: 15px;
+            color: #6b6b6b;
+            line-height: 1.6;
+        }
+
+        .testimonial-section {
+            background: white;
+            border-radius: 24px;
+            padding: 60px 40px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .testimonial-content {
+            text-align: center;
+        }
+
+        .quote-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .quote-icon svg {
+            width: 48px;
+            height: 48px;
+            fill: #4a7c59;
+            opacity: 0.3;
+        }
+
+        .testimonial-text {
+            font-size: 20px;
+            color: #2d2d2d;
+            line-height: 1.6;
+            margin-bottom: 32px;
+            font-style: italic;
+        }
+
+        .testimonial-author {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+        }
+
+        .author-avatar {
+            width: 56px;
+            height: 56px;
+            background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 700;
+            font-size: 20px;
+        }
+
+        .author-info h4 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d2d2d;
+            margin-bottom: 4px;
+        }
+
+        .author-info p {
+            font-size: 15px;
+            color: #6b6b6b;
+        }
+
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 32px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .pricing-card {
+            background: white;
+            padding: 40px 32px;
+            border-radius: 20px;
+            border: 2px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            position: relative;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform, box-shadow;
+        }
+
+        .pricing-card:hover {
+            transform: translate3d(0, -8px, 0);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+            border-color: rgba(74, 124, 89, 0.3);
+        }
+
+        .pricing-card.popular {
+            border-color: #4a7c59;
+            box-shadow: 0 8px 32px rgba(74, 124, 89, 0.15);
+        }
+
+        .pricing-card.popular:hover {
+            box-shadow: 0 16px 48px rgba(74, 124, 89, 0.25);
+        }
+
+        .popular-badge {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
+            color: white;
+            padding: 6px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        .pricing-card h3 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2d2d2d;
+            margin-bottom: 12px;
+        }
+
+        .price {
+            font-size: 48px;
+            font-weight: 800;
+            color: #4a7c59;
+            margin-bottom: 8px;
+        }
+
+        .price span {
+            font-size: 18px;
+            font-weight: 600;
+            color: #6b6b6b;
+        }
+
+        .price-period {
+            font-size: 14px;
+            color: #6b6b6b;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .pricing-features {
+            list-style: none;
+            margin-bottom: 32px;
+        }
+
+        .pricing-features li {
+            padding: 12px 0;
+            font-size: 15px;
+            color: #2d2d2d;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pricing-features li svg {
+            width: 18px;
+            height: 18px;
+            stroke: #4a7c59;
+            stroke-width: 2.5;
+            fill: none;
+            flex-shrink: 0;
+        }
+
+        /* ── USE CASES ── */
+        .usecases-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .usecase-card {
+            background: white;
+            padding: 32px 28px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+            transition: all .4s cubic-bezier(0.16, 1, 0.3, 1);
+            cursor: default;
+        }
+
+        .usecase-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+            border-color: rgba(74, 124, 89, .2);
+        }
+
+        .usecase-card:hover .uc-icon {
+            transform: scale(1.08) rotate(4deg);
+        }
+
+        .uc-icon {
+            width: 52px;
+            height: 52px;
+            background: linear-gradient(135deg, #4a7c59, #3d6849);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            transition: transform .4s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .uc-icon svg {
+            width: 26px;
+            height: 26px;
+            stroke: white;
+            fill: none;
+        }
+
+        .uc-tag {
+            display: inline-block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .8px;
+            text-transform: uppercase;
+            color: #4a7c59;
+            background: rgba(74, 124, 89, .1);
+            padding: 4px 10px;
+            border-radius: 20px;
+            margin-bottom: 12px;
+        }
+
+        .usecase-card h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d2d2d;
+            margin-bottom: 12px;
+        }
+
+        .usecase-card p {
+            font-size: 15px;
+            color: #6b6b6b;
+            line-height: 1.6;
+        }
+
+        /* ── HOW IT WORKS ── */
+        .how-section {
+            background: white;
+            border-radius: 28px;
+            padding: 70px 40px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0;
+            position: relative;
+        }
+
+        .steps::before {
+            content: '';
+            position: absolute;
+            top: 32px;
+            left: calc(16.67% + 16px);
+            right: calc(16.67% + 16px);
+            height: 2px;
+            background: linear-gradient(90deg, #4a7c59, #3d6849);
+            opacity: .25;
+            z-index: 0;
+        }
+
+        .step {
+            text-align: center;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .step-num {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4a7c59, #3d6849);
+            color: white;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 22px;
+            font-weight: 800;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 8px 20px rgba(74, 124, 89, .3);
+            transition: transform .3s ease;
+        }
+
+        .step:hover .step-num {
+            transform: scale(1.1);
+        }
+
+        .step h3 {
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d2d2d;
+            margin-bottom: 12px;
+        }
+
+        .step p {
+            font-size: 15px;
+            color: #6b6b6b;
+            line-height: 1.6;
+        }
+
+        /* ── TEAM ── */
+        .team-grid {
+            display: flex;
+            flex-direction: row;
+            gap: 20px;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .team-card {
+            position: relative;
+            flex: 0 0 auto;
+            width: 220px;
+            height: 320px;
+            border-radius: 18px;
+            overflow: hidden;
+            cursor: pointer;
+            transform-style: preserve-3d;
+            transition: box-shadow 0.5s ease, transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+            box-shadow:
+                0 1px 1px rgba(0, 0, 0, 0.04),
+                0 4px 12px rgba(0, 0, 0, 0.08),
+                0 16px 40px rgba(0, 0, 0, 0.12),
+                0 32px 64px rgba(0, 0, 0, 0.08);
+        }
+
+        .team-card:hover {
+            box-shadow:
+                0 1px 1px rgba(0, 0, 0, 0.06),
+                0 8px 24px rgba(74, 124, 89, 0.15),
+                0 24px 56px rgba(0, 0, 0, 0.2),
+                0 48px 96px rgba(0, 0, 0, 0.14);
+        }
+
+        /* ── Full-bleed thumbnail (canvas) ── */
+        .team-card__thumb {
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            background: #2a2e28;
+            transition: opacity 0.6s ease;
+        }
+
+        .team-card__thumb canvas {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* ── Full-bleed video ── */
+        .team-card__video {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            opacity: 0;
+            transition: opacity 0.6s ease;
+        }
+
+        .team-card__video video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .team-card:hover .team-card__thumb {
+            opacity: 0;
+        }
+
+        .team-card:hover .team-card__video {
+            opacity: 1;
+        }
+
+        /* ── Scrim ── */
+        .team-card__scrim {
+            position: absolute;
+            inset: 0;
+            z-index: 3;
+            background: linear-gradient(to top,
+                    rgba(10, 16, 12, 0.88) 0%,
+                    rgba(10, 16, 12, 0.45) 38%,
+                    rgba(10, 16, 12, 0.10) 65%,
+                    transparent 100%);
+            pointer-events: none;
+        }
+
+
+        /* ── Content ── */
+        .team-card__content {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            z-index: 4;
+            padding: 0 20px 22px;
+        }
+
+        .team-card__name {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 24px;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.02em;
+            line-height: 1;
+            margin-bottom: 5px;
+        }
+
+        .team-card__role {
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.11em;
+            text-transform: uppercase;
+            color: rgba(255, 255, 255, 0.7);
+            margin-bottom: 12px;
+        }
+
+        .team-card__rule {
+            width: 28px;
+            height: 1.5px;
+            background: #4a7c59;
+            border-radius: 2px;
+            margin-bottom: 12px;
+            opacity: 0.85;
+        }
+
+        .team-card__desc {
+            font-size: 12.5px;
+            font-weight: 400;
+            color: rgba(255, 255, 255, 0.8);
+            line-height: 1.6;
+            letter-spacing: 0.01em;
+        }
+
+        /* ── Loading spinner ── */
+        .thumb-loading {
+            position: absolute;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #2a2e28;
+        }
+
+        .spinner {
+            width: 24px;
+            height: 24px;
+            border: 2px solid rgba(74, 124, 89, 0.2);
+            border-top-color: #4a7c59;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* ── FAQ ── */
+        .faq-list {
+            max-width: 760px;
+            margin: 0 auto;
+        }
+
+        .faq-item {
+            background: white;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            border: 1px solid rgba(0, 0, 0, 0.06);
+            overflow: hidden;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+            transition: box-shadow .3s ease;
+        }
+
+        .faq-item:hover {
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        .faq-question {
+            width: 100%;
+            background: none;
+            border: none;
+            padding: 22px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-size: 18px;
+            font-weight: 700;
+            color: #2d2d2d;
+            text-align: left;
+            gap: 16px;
+            transition: color .2s ease;
+        }
+
+        .faq-question:hover {
+            color: #4a7c59;
+        }
+
+        .faq-icon {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            flex-shrink: 0;
+            background: rgba(74, 124, 89, .1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all .3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .faq-icon svg {
+            width: 14px;
+            height: 14px;
+            stroke: #4a7c59;
+            fill: none;
+            transition: transform .3s ease;
+        }
+
+        .faq-item.open .faq-icon {
+            background: #4a7c59;
+        }
+
+        .faq-item.open .faq-icon svg {
+            stroke: white;
+            transform: rotate(45deg);
+        }
+
+        .faq-answer {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height .4s cubic-bezier(0.16, 1, 0.3, 1), padding .3s ease;
+            padding: 0 28px;
+        }
+
+        .faq-answer p {
+            font-size: 15px;
+            color: #6b6b6b;
+            line-height: 1.6;
+            padding-bottom: 22px;
+        }
+
+        .faq-item.open .faq-answer {
+            max-height: 200px;
+        }
+
+        .section-label {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #4a7c59;
+            margin-bottom: 12px;
+        }
+
+        .cta-section {
+            background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
+            border-radius: 24px;
+            padding: 80px 40px;
+            text-align: center;
+            color: white;
+            box-shadow: 0 12px 40px rgba(74, 124, 89, 0.3);
+        }
+
+        .cta-section h2 {
+            font-size: 42px;
+            font-weight: 800;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+        }
+
+        .cta-section p {
+            font-size: 18px;
+            margin-bottom: 40px;
+            opacity: 0.95;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            font-weight: 500;
+        }
+
+        .email-form {
+            display: flex;
+            gap: 12px;
+            max-width: 500px;
+            margin: 0 auto 24px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .email-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 16px 20px;
+            border-radius: 12px;
+            border: none;
+            font-size: 15px;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 500;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            will-change: transform, box-shadow;
+        }
+
+        .email-input:focus {
+            outline: none;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            transform: translate3d(0, -2px, 0);
+        }
+
+        .email-submit {
+            padding: 16px 40px;
+            background: white;
+            color: #4a7c59;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            will-change: transform, box-shadow;
+        }
+
+        .email-submit:hover {
+            transform: translate3d(0, -2px, 0);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+        }
+
+        .email-submit:active {
+            transform: translate3d(0, 0, 0);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            transition-duration: 0.1s;
+        }
+
+        .cta-friction-reducer {
+            font-size: 14px;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        footer {
+            background: white;
+            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            padding: 40px 24px;
+            margin-top: 80px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            text-align: center;
+            color: #6b6b6b;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 1024px) {
+            .nav-center {
+                display: none;
+            }
+
+            .nav-auth-box {
+                display: none;
+            }
+
+            .mobile-menu-btn {
+                display: block;
+            }
+
+            .nav-container {
+                padding: 0 24px;
+            }
+
+            .team-grid {
+                gap: 16px;
+                justify-content: center;
+            }
+
+            .team-card {
+                width: 200px;
+                height: 280px;
+            }
+
+            .usecases-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+
+            .hero p {
+                font-size: 18px;
+            }
+
+            .section-title {
+                font-size: 32px;
+            }
+
+            .problem-cards,
+            .features-grid,
+            .pricing-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .testimonial-section {
+                padding: 40px 24px;
+            }
+
+            .testimonial-text {
+                font-size: 18px;
+            }
+
+            .cta-section h2 {
+                font-size: 32px;
+            }
+
+            .email-form {
+                flex-direction: column;
+            }
+
+            .email-input {
+                width: 100%;
+            }
+
+            .nav-container {
+                padding: 0 16px;
+            }
+
+            .logo-box {
+                padding: 10px 20px;
+            }
+
+            .logo {
+                font-size: 18px;
+            }
+
+            .steps {
+                grid-template-columns: 1fr;
+            }
+
+            .steps::before {
+                display: none;
+            }
+
+            .usecases-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .team-grid {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .team-card {
+                width: 280px;
+                height: 360px;
+            }
+
+            .how-section {
+                padding: 40px 24px;
+            }
+
+            .cta-section {
+                padding: 50px 24px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Noise Canvas -->
+    <canvas id="noise-canvas"></canvas>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="logo-box">
+                <div class="logo">
+                    <img src="assets/logo1.png" alt="Logo" class="logo-img">
+                    talk2.ai
+                </div>
+            </div>
+
+            <div class="nav-center">
+                <div class="nav-links-box">
+                    <a href="#" class="active">Home</a>
+                    <a href="#usecases">Use Cases</a>
+                    <a href="#how">How It Works</a>
+                    <a href="#features">Features</a>
+                </div>
+            </div>
+
+
+            <div class="nav-auth-box">
+                <a href="#" onclick="openComingSoon(event)">Login</a>
+                <a href="#" onclick="openComingSoon(event)">Sign Up</a>
+            </div>
+
+            <button class="mobile-menu-btn">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+            </button>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <h1>Talk to <span class="gradient-text">Anyone</span>,<br>Anytime</h1>
+        <p>Design AI personas. Power them with your knowledge base.<br> One platform, endless possibilities.</p>
+
+        <div class="hero-cta">
+            <a href="#" class="btn-primary" onclick="openComingSoon(event)">Start Your Experience</a>
+            <a href="#features" class="btn-secondary">See How It Works</a>
+        </div>
+
+        <div class="trust-signals">
+            <div class="trust-item">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+                RAG-powered accuracy
+            </div>
+            <div class="trust-item">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z" />
+                </svg>
+                Instant responses
+            </div>
+            <div class="trust-item">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                </svg>
+                End-to-end encrypted
+            </div>
+        </div>
+    </section>
+
+
+
+
+    <section class="section" id="usecases" style="position: relative;">
+        <div class="section-label">Who It's For</div>
+        <h2 class="section-title">Built for Every Industry</h2>
+        <p class="section-subtitle">Anyone with a knowledge base can deploy a talk2 AI persona in minutes.</p>
+
+        <div class="usecases-grid">
+            <!-- Healthcare -->
+            <div class="usecase-card animate-on-scroll">
+                <div class="uc-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                    </svg>
+                </div>
+                <span class="uc-tag">Healthcare</span>
+                <h3>Hospitals & Clinics</h3>
+                <p>Patients can ask about appointment procedures, medications, departments, and visiting hours — without
+                    calling the front desk.</p>
+            </div>
+            <!-- Education -->
+            <div class="usecase-card animate-on-scroll">
+                <div class="uc-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+                    </svg>
+                </div>
+                <span class="uc-tag">Education</span>
+                <h3>Universities & Schools</h3>
+                <p>Students get instant answers about admission processes, course syllabi, fee structures, and campus
+                    facilities — available 24/7, even during exam season.</p>
+            </div>
+            <!-- Retail -->
+            <div class="usecase-card animate-on-scroll">
+                <div class="uc-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                </div>
+                <span class="uc-tag">Retail</span>
+                <h3>E-commerce & Stores</h3>
+                <p>Shoppers can query product specs, return policies, stock availability, and delivery timelines —
+                    turning browsing into buying with zero friction.</p>
+            </div>
+            <!-- Banking -->
+            <div class="usecase-card animate-on-scroll">
+                <div class="uc-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                    </svg>
+                </div>
+                <span class="uc-tag">Finance</span>
+                <h3>Banks & Financial Services</h3>
+                <p>Customers ask about loan eligibility, interest rates, account types, and document requirements — the
+                    persona answers from the bank's official knowledge base only.</p>
+            </div>
+            <!-- Restaurants -->
+            <div class="usecase-card animate-on-scroll">
+                <div class="uc-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <span class="uc-tag">Food & Hospitality</span>
+                <h3>Restaurants & Hotels</h3>
+                <p>Guests enquire about menus, allergens, room availability, special offers, and event bookings —
+                    handled instantly with no staff involvement needed.</p>
+            </div>
+            <!-- Support -->
+            <div class="usecase-card animate-on-scroll">
+                <div class="uc-icon">
+                    <svg viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                </div>
+                <span class="uc-tag">Customer Support</span>
+                <h3>SaaS & Tech Companies</h3>
+                <p>Users get instant technical help, onboarding guidance, and troubleshooting. all grounded in the
+                    company's documentation.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section class="section" id="how">
+        <div class="section-label">The Process</div>
+        <h2 class="section-title">Up and Running in 3 Steps</h2>
+        <p class="section-subtitle">No ML expertise needed. Users can plug-in their knowledge and get a live persona.
+        </p>
+        <div class="how-section animate-on-scroll">
+            <div class="steps">
+                <div class="step">
+                    <div class="step-num">1</div>
+                    <h3>Upload Your Knowledge Base</h3>
+                    <p>Users can upload text documents or PDFs. Our pipeline
+                        ingests and indexes everything using Retrieval Augmented Generation.</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">2</div>
+                    <h3>Customize Your Persona</h3>
+                    <p>Give your AI persona a name, personality, and tone of voice. It becomes the face of your brand —
+                        knowledgeable, consistent, and always available.</p>
+                </div>
+                <div class="step">
+                    <div class="step-num">3</div>
+                    <h3>Deploy & Start Chatting</h3>
+                    <p>Share your persona with others or keep it private. Start conversations instantly and get
+                        accurate,
+                        real-time answers drawn from your knowledge base.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="features">
+        <div class="section-label">Capabilities</div>
+        <h2 class="section-title">Built for Real-World Conversations</h2>
+        <p class="section-subtitle">Powered by advanced AI that understands context, emotion, and personality</p>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                    </svg>
+                </div>
+                <h3>Create Any Persona</h3>
+                <p>Build custom AI characters with unique personalities, backgrounds, and conversation styles</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                    </svg>
+                </div>
+                <h3>Contextual Memory</h3>
+                <p>Your AI remembers past conversations, creating deeper, more meaningful interactions over time</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                </div>
+                <h3>Completely Private</h3>
+                <p>Your conversations are stored securely and never shared. What you say stays between you and your AI
+                </p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon"><svg viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg></div>
+                <h3>RAG-Grounded Answers</h3>
+                <p>Retrieves relevant chunks from your documents before generating a response — so it never hallucinates
+                    facts outside your knowledge base.</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <h3>Always Available</h3>
+                <p>No appointments, no schedules. Your AI personas are ready whenever you need them, day or night</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                </div>
+                <h3>Works Everywhere</h3>
+                <p>Seamless experience across web, mobile, and desktop. Continue conversations anywhere</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- TEAM -->
+    <section class="section" id="team">
+        <div class="section-label">The People</div>
+        <h2 class="section-title">Meet the Team</h2>
+        <p class="section-subtitle">A group of passionate CS students who built Talk2 AI as a college project to explore
+            the future of human-AI interaction.</p>
+        <div class="team-grid">
+            <!-- Card 1: Saleem -->
+            <div class="team-card animate-on-scroll" data-index="0">
+                <div class="team-card__thumb">
+                    <div class="thumb-loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+                <div class="team-card__video">
+                    <video src="team_videos/saleem_video.mp4" muted loop playsinline
+                        preload="metadata"></video>
+                </div>
+                <div class="team-card__scrim"></div>
+                <div class="team-card__content">
+                    <div class="team-card__name">Saleem</div>
+                    <div class="team-card__role">Full Stack Developer</div>
+                    <div class="team-card__rule"></div>
+                    <p class="team-card__desc">Backend, frontend, RAG, voice cloning &amp; integrations.</p>
+                </div>
+            </div>
+
+            <!-- Card 2: Aman -->
+            <div class="team-card animate-on-scroll" data-index="1">
+                <div class="team-card__thumb">
+                    <div class="thumb-loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+                <div class="team-card__video">
+                    <video src="team_videos/aman_video.mp4" muted loop playsinline
+                        preload="metadata"></video>
+                </div>
+                <div class="team-card__scrim"></div>
+                <div class="team-card__content">
+                    <div class="team-card__name">Aman</div>
+                    <div class="team-card__role">Frontend Developer</div>
+                    <div class="team-card__rule"></div>
+                    <p class="team-card__desc">AI avatar integration and frontend development.</p>
+                </div>
+            </div>
+
+            <!-- Card 3: Nourin -->
+            <div class="team-card animate-on-scroll" data-index="2">
+                <div class="team-card__thumb">
+                    <div class="thumb-loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+                <div class="team-card__video">
+                    <video src="team_videos/nourin_video.mp4" muted loop playsinline
+                        preload="metadata"></video>
+                </div>
+                <div class="team-card__scrim"></div>
+                <div class="team-card__content">
+                    <div class="team-card__name">Nourin</div>
+                    <div class="team-card__role">Backend Developer</div>
+                    <div class="team-card__rule"></div>
+                    <p class="team-card__desc">Backend development, voice cloning &amp; integrations.</p>
+                </div>
+            </div>
+
+            <!-- Card 4: Dilna -->
+            <div class="team-card animate-on-scroll" data-index="3">
+                <div class="team-card__thumb">
+                    <div class="thumb-loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+                <div class="team-card__video">
+                    <video src="team_videos/dilna_video.mp4" muted loop playsinline
+                        preload="metadata"></video>
+                </div>
+                <div class="team-card__scrim"></div>
+                <div class="team-card__content">
+                    <div class="team-card__name">Dilna</div>
+                    <div class="team-card__role">Frontend Developer</div>
+                    <div class="team-card__rule"></div>
+                    <p class="team-card__desc">Frontend development, UI/UX design &amp; visual identity.</p>
+                </div>
+            </div>
+
+            <!-- Card 5: Nahana -->
+            <div class="team-card animate-on-scroll" data-index="4">
+                <div class="team-card__thumb">
+                    <div class="thumb-loading">
+                        <div class="spinner"></div>
+                    </div>
+                </div>
+                <div class="team-card__video">
+                    <video src="team_videos/nahana_miss_video.mp4" muted loop playsinline
+                        preload="metadata"></video>
+                </div>
+                <div class="team-card__scrim"></div>
+                <div class="team-card__content">
+                    <div class="team-card__name">Prof. Nahana C</div>
+                    <div class="team-card__role">Project Guide</div>
+                    <div class="team-card__rule"></div>
+                    <p class="team-card__desc">Mentored the team  &amp; supported the project from concept to completion.</p>
+                </div>
+            </div>
+
+
+
+        </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" id="faq">
+        <div class="section-label">Got Questions?</div>
+        <h2 class="section-title">Frequently Asked Questions</h2>
+        <p class="section-subtitle">Everything you need to know about Talk2 AI and how it works.</p>
+        <div class="faq-list">
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-question">
+                    What exactly is RAG and why does it matter?
+                    <div class="faq-icon"><svg viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M12 4v16m8-8H4" />
+                        </svg></div>
+                </button>
+                <div class="faq-answer">
+                    <p>RAG stands for Retrieval-Augmented Generation. Instead of relying purely on a pre-trained AI
+                        model's memory, RAG first searches through your uploaded documents to find relevant information,
+                        then uses that as context when generating a response. This means answers are accurate,
+                        up-to-date, and grounded in your actual content — not guesswork.</p>
+                </div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-question">
+                    What kinds of documents can a users upload?
+                    <div class="faq-icon"><svg viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M12 4v16m8-8H4" />
+                        </svg></div>
+                </button>
+                <div class="faq-answer">
+                    <p>Currently, users can upload PDFs, plain text files, and Word documents. The system chunks,
+                        embeds, and indexes all content automatically. In future versions, we plan to support website
+                        scraping and spreadsheet uploads as well.</p>
+                </div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-question">
+                    Will the AI persona make up information not in the documents?
+                    <div class="faq-icon"><svg viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M12 4v16m8-8H4" />
+                        </svg></div>
+                </button>
+                <div class="faq-answer">
+                    <p>No — that's the key advantage of RAG. If the answer isn't in the uploaded knowledge base, the
+                        persona says so clearly rather than inventing a response. users can configure how the AI persona
+                        handles out-of-scope questions, such as directing users to contact support.</p>
+                </div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-question">
+                    How long does it take to set up an AI persona?
+                    <div class="faq-icon"><svg viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M12 4v16m8-8H4" />
+                        </svg></div>
+                </button>
+                <div class="faq-answer">
+                    <p>Once registered, a users can upload documents, name their AI persona, and have it live in under 10
+                        minutes. The ingestion pipeline processes documents quickly, and no technical expertise is
+                        required. It's designed to be as simple as filling out a form.</p>
+                </div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-question">
+                    Is the conversation data private and secure?
+                    <div class="faq-icon"><svg viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M12 4v16m8-8H4" />
+                        </svg></div>
+                </button>
+                <div class="faq-answer">
+                    <p>Yes. Each persona's knowledge base is isolated and never shared with other personas.
+                        Conversations are stored securely, This is a college project built with privacy as a core principle.</p>
+                </div>
+            </div>
+
+            <div class="faq-item animate-on-scroll">
+                <button class="faq-question">
+                    Is this a commercial product?
+                    <div class="faq-icon"><svg viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"
+                                d="M12 4v16m8-8H4" />
+                        </svg></div>
+                </button>
+                <div class="faq-answer">
+                    <p>No — Talk2 AI is a college project built to demonstrate the potential of RAG-based AI personas for
+                        society. It is not a commercial SaaS product. The platform is intended for academic
+                        demonstration and exploration purposes.</p>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
+    <section class="section">
+        <div class="cta-section animate-on-scroll">
+            <h2>Ready to Deploy Your AI persona?</h2>
+            <p>Upload your knowledge base and watch your AI persona come to life. No credit card, no setup fees — it's a
+                college project.</p>
+            <form class="email-form" onsubmit="openComingSoon(event)">
+                <input type="email" class="email-input" placeholder="Enter your email" required>
+                <button type="submit" class="email-submit">Get Started Free</button>
+            </form>
+<p class="cta-friction-reducer">A College project <span style="margin: 0 6px;">•</span> 100% free <span style="margin: 0 6px;">•</span> Open for everyone</p>        </div>
+    </section>
+
+    <footer>
+        <div class="footer-content">
+            <p>© 2026 Talk2 AI &mdash; Crafted with curiosity, code &amp; a little <svg viewBox="0 0 24 24" width="14" height="14" fill="#4a7c59" style="display:inline-block;vertical-align:-1px;"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg></p>
+        </div>
+    </footer>
+
+    <script>
+        // Noise canvas effect
+        const canvas = document.getElementById('noise-canvas');
+        if (canvas) {
+            const ctx = canvas.getContext('2d');
+
+            function resizeCanvas() {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            }
+
+            function drawNoise() {
+                const imageData = ctx.createImageData(canvas.width, canvas.height);
+                const buffer = new Uint32Array(imageData.data.buffer);
+                const len = buffer.length;
+
+                for (let i = 0; i < len; i++) {
+                    if (Math.random() < 0.5) {
+                        buffer[i] = 0xff000000;
+                    }
+                }
+
+                ctx.putImageData(imageData, 0, 0);
+            }
+
+            resizeCanvas();
+            drawNoise();
+            window.addEventListener('resize', () => {
+                resizeCanvas();
+                drawNoise();
+            });
+        }
+
+        // Navbar scroll
+        const navbar = document.querySelector('.navbar');
+        window.addEventListener('scroll', () => {
+            navbar.classList.toggle('scrolled', window.scrollY > 20);
+        }, { passive: true });
+
+        // Scroll-based navigation highlighting
+        const sections = document.querySelectorAll('section[id]');
+        const navLinks = document.querySelectorAll('.nav-links-box a');
+
+        function updateActiveNavLink() {
+            const scrollPosition = window.scrollY + 100; // Offset for better UX
+
+            let currentSection = '';
+
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop;
+                const sectionHeight = section.offsetHeight;
+
+                if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                    currentSection = section.getAttribute('id');
+                }
+            });
+
+            // If at the very top, set Home as active
+            if (window.scrollY < 100) {
+                currentSection = '';
+            }
+
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                const href = link.getAttribute('href');
+
+                if (href === '#' && currentSection === '') {
+                    link.classList.add('active');
+                } else if (href === `#${currentSection}`) {
+                    link.classList.add('active');
+                }
+            });
+        }
+
+        // Update on scroll
+        window.addEventListener('scroll', updateActiveNavLink, { passive: true });
+
+        // Update on page load
+        updateActiveNavLink();
+
+        // Handle navbar click for smooth scroll
+        document.querySelectorAll('.nav-links-box a').forEach(link => {
+            link.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href.startsWith('#') && href !== '#') {
+                    e.preventDefault();
+                    const targetSection = document.querySelector(href);
+                    if (targetSection) {
+                        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                }
+            });
+        });
+
+        // Scroll animations
+        const observer = new IntersectionObserver(entries => {
+            entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+        document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
+
+        // FAQ accordion
+        document.querySelectorAll('.faq-question').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const item = btn.parentElement;
+                const isOpen = item.classList.contains('open');
+                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+                if (!isOpen) item.classList.add('open');
+            });
+        });
+
+        // Team cards video functionality
+        document.querySelectorAll('.team-card').forEach(card => {
+            const video = card.querySelector('video');
+            const thumb = card.querySelector('.team-card__thumb');
+
+            /* ── Tilt effect ── */
+            card.addEventListener('mousemove', e => {
+                const r = card.getBoundingClientRect();
+                const x = (e.clientX - r.left) / r.width - 0.5;
+                const y = (e.clientY - r.top) / r.height - 0.5;
+                card.style.transform = `rotateY(${x * 8}deg) rotateX(${-y * 8}deg) scale(1.02)`;
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = '';
+                if (video) {
+                    video.pause();
+                    video.currentTime = 0;
+                }
+            });
+
+            card.addEventListener('mouseenter', () => {
+                if (video) {
+                    video.play().catch(() => { });
+                }
+            });
+
+            /* ── Canvas thumbnail: first frame ── */
+            if (video && thumb) {
+                (function () {
+                    function draw() {
+                        try {
+                            const c = document.createElement('canvas');
+                            c.width = video.videoWidth || 640;
+                            c.height = video.videoHeight || 480;
+                            c.getContext('2d').drawImage(video, 0, 0, c.width, c.height);
+                            thumb.innerHTML = '';
+                            c.style.cssText = 'width:100%;height:100%;object-fit:cover;display:block;';
+                            thumb.appendChild(c);
+                            video.pause();
+                            video.currentTime = 0;
+                        } catch {
+                            thumb.innerHTML = '<div style="position:absolute;inset:0;background:#2a2e28"></div>';
+                        }
+                    }
+
+                    video.addEventListener('seeked', draw, { once: true });
+                    video.addEventListener('loadedmetadata', () => { video.currentTime = 0.001; }, { once: true });
+                    if (video.readyState >= 1) video.currentTime = 0.001;
+                })();
+            }
+        });
+    </script>
+    <script src="js/logo-rotation.js"></script>
+    <script src="js/clickspark.js"></script>
+
+    <!-- Coming Soon Modal -->
+    <style>
+        .cs-modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(10, 16, 12, 0.55);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+            animation: csFadeIn 0.25s ease;
+        }
+
+        .cs-modal-overlay.active { display: flex; }
+
+        @keyframes csFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .cs-modal {
+            position: relative;
+            background: #ffffff;
+            border-radius: 28px;
+            width: 100%;
+            max-width: 440px;
+            overflow: hidden;
+            box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
+            animation: csPop 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes csPop {
+            from { opacity: 0; transform: translateY(40px) scale(0.94); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Hero area with the rotating logo */
+        .cs-hero {
+            position: relative;
+            padding: 46px 32px 32px;
+            text-align: center;
+            background:
+                radial-gradient(120% 90% at 50% 0%, rgba(74, 124, 89, 0.16) 0%, rgba(74, 124, 89, 0) 55%),
+                linear-gradient(180deg, #f5f3ed 0%, #ffffff 100%);
+            overflow: hidden;
+        }
+
+        /* slow conic light sweep behind everything */
+        .cs-hero::before {
+            content: '';
+            position: absolute;
+            top: -60%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: conic-gradient(from 0deg, transparent 0deg, rgba(74, 124, 89, 0.1) 55deg, transparent 120deg);
+            animation: csSweep 9s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes csSweep { to { transform: rotate(360deg); } }
+
+        .cs-logo-wrap {
+            position: relative;
+            width: 124px;
+            height: 124px;
+            margin: 0 auto 22px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* dashed orbit ring + traveling dot (counter-rotates) */
+        .cs-logo-ring {
+            position: absolute;
+            inset: 0;
+            border-radius: 50%;
+            border: 2px dashed rgba(74, 124, 89, 0.35);
+            animation: csSpinRev 20s linear infinite;
+            z-index: 1;
+        }
+
+        .cs-logo-ring::before {
+            content: '';
+            position: absolute;
+            top: -6px;
+            left: 50%;
+            width: 11px;
+            height: 11px;
+            margin-left: -5.5px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #4a7c59, #3d6849);
+            box-shadow: 0 0 12px rgba(74, 124, 89, 0.85);
+        }
+
+        /* the logo, rotating clockwise */
+        .cs-logo-spin {
+            position: relative;
+            width: 84px;
+            height: 84px;
+            object-fit: contain;
+            z-index: 2;
+            animation: csSpin 14s linear infinite;
+        }
+
+        @keyframes csSpin { to { transform: rotate(360deg); } }
+        @keyframes csSpinRev { to { transform: rotate(-360deg); } }
+
+        .cs-body {
+            padding: 26px 32px 34px;
+            text-align: center;
+        }
+
+        .cs-title {
+            font-size: 25px;
+            font-weight: 800;
+            color: #2d2d2d;
+            letter-spacing: -0.6px;
+            line-height: 1.2;
+            margin: 0 0 12px;
+        }
+
+        .cs-title .g {
+            background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .cs-message {
+            font-size: 15px;
+            color: #6b6b6b;
+            line-height: 1.65;
+            margin: 0 0 26px;
+        }
+
+        .cs-btn {
+            position: relative;
+            width: 100%;
+            padding: 15px 24px;
+            background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 700;
+            cursor: pointer;
+            overflow: hidden;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            box-shadow: 0 8px 20px rgba(74, 124, 89, 0.28);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .cs-btn::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+            animation: csShine 3s ease-in-out infinite;
+        }
+
+        @keyframes csShine {
+            0% { left: -100%; }
+            50%, 100% { left: 100%; }
+        }
+
+        .cs-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 28px rgba(74, 124, 89, 0.4);
+        }
+
+        .cs-btn:active { transform: translateY(0); }
+
+        .cs-close {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 38px;
+            height: 38px;
+            border: none;
+            background: transparent;
+            color: #6b6b6b;
+            font-size: 26px;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+            transition: all 0.2s ease;
+        }
+
+        .cs-close:hover {
+            color: #4a7c59;
+            transform: rotate(90deg);
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .cs-logo-spin,
+            .cs-logo-ring,
+            .cs-hero::before,
+            .cs-btn::after {
+                animation: none;
+            }
+        }
+    </style>
+
+    <div class="cs-modal-overlay" id="comingSoonModal" role="dialog" aria-modal="true" aria-labelledby="csTitle">
+        <div class="cs-modal">
+            <button class="cs-close" onclick="closeComingSoon()" aria-label="Close">&times;</button>
+            <div class="cs-hero">
+                <div class="cs-logo-wrap">
+                    <div class="cs-logo-ring"></div>
+                    <img src="assets/logo1.png" class="cs-logo-spin" alt="Talk2 AI logo">
+                </div>
+            </div>
+            <div class="cs-body">
+                <h3 class="cs-title" id="csTitle">Something great is <span class="g">on the way</span></h3>
+                <p class="cs-message">Accounts and login aren't live just yet. We're busy putting the final touches in
+                    place — check back soon to design and chat with your own AI personas!</p>
+                <button class="cs-btn" onclick="closeComingSoon()">Got it</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const csModal = document.getElementById('comingSoonModal');
+
+        function openComingSoon(e) {
+            if (e) e.preventDefault();
+            csModal.classList.add('active');
+        }
+
+        function closeComingSoon() {
+            csModal.classList.remove('active');
+        }
+
+        // Close on overlay click
+        csModal.addEventListener('click', function (e) {
+            if (e.target === csModal) closeComingSoon();
+        });
+
+        // Close on Escape
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && csModal.classList.contains('active')) closeComingSoon();
+        });
+    </script>
+</body>
+
+</html>
