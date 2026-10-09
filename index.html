@@ -70,6 +70,14 @@
            radii step up, because a squircle at a given radius reads tighter
            than a circular corner at the same value. */
         :root {
+            /* Height of the sticky navbar, used by the hero to fill exactly
+               one screen. It is fully determined by CSS - 16px padding top
+               and bottom plus the tallest pill - and changes only at the
+               1024px breakpoint, so it is declared rather than measured.
+               A measured value would have to survive resize/rotation timing
+               to stay correct; this cannot go stale. */
+            --nav-h: 88px;
+
             --r-btn: 12px;
             --r-icon-sm: 12px;
             --r-icon: 14px;
@@ -129,7 +137,9 @@
         .cs-btn,
         .problem-icon,
         .uc-icon,
-        .feature-icon {
+        .feature-icon,
+        /* a square at border-radius:50% becomes a true squircle here */
+        .step-num {
             corner-shape: squircle;
         }
 
@@ -617,10 +627,19 @@
             margin: 0 auto;
             padding: clamp(40px, 7vw, 80px) clamp(16px, 4vw, 24px) clamp(36px, 6vw, 60px);
             text-align: center;
+            /* own the first screen. svh is the SMALL viewport height, so a
+               mobile address bar appearing can never push the hero taller
+               than the screen. min-height (not height) means short landscape
+               screens just grow instead of squashing. */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-height: calc(100vh - var(--nav-h));
+            min-height: calc(100svh - var(--nav-h));
         }
 
         .hero h1 {
-            font-size: clamp(2.125rem, 1.536rem + 2.62vw, 3.5rem);
+            font-size: clamp(2.5rem, 1.321rem + 5.24vw, 5.25rem);
             font-weight: 800;
             color: #2d2d2d;
             line-height: 1.12;
@@ -636,6 +655,12 @@
             -webkit-text-fill-color: transparent;
             background-clip: text;
             display: inline-block;
+            /* background-clip:text paints the gradient only inside this box,
+               but line-height 1.12 makes the box shorter than the glyphs, so
+               the descender of the "y" lost its fill. Extend the paint area
+               downward and cancel it again so layout is untouched. */
+            padding-bottom: 0.12em;
+            margin-bottom: -0.12em;
             animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.1s backwards;
         }
 
@@ -1248,7 +1273,6 @@
             grid-template-columns: repeat(3, 1fr);
             gap: clamp(6px, 1.2vw, 18px);
             position: relative;
-            counter-reset: step;
         }
 
         /* rail threading the three nodes, fading out at both ends */
@@ -1268,30 +1292,12 @@
         }
 
         .step {
-            counter-increment: step;
             text-align: center;
             padding: var(--step-pad-top) clamp(10px, 1.8vw, 22px) clamp(18px, 2.4vw, 26px);
             position: relative;
             z-index: 1;
-            overflow: hidden;
             border-radius: var(--r-step);
             transition: background-color .35s ease;
-        }
-
-        /* oversized watermark numeral */
-        .step::after {
-            content: counter(step);
-            position: absolute;
-            top: -14px;
-            right: 10px;
-            font-size: 92px;
-            font-weight: 800;
-            line-height: 1;
-            letter-spacing: -0.05em;
-            color: rgba(74, 124, 89, .07);
-            pointer-events: none;
-            z-index: -1;
-            transition: color .35s ease;
         }
 
         .step-num {
@@ -1324,10 +1330,6 @@
 
             .step:hover .step-num {
                 transform: scale(1.08);
-            }
-
-            .step:hover::after {
-                color: rgba(74, 124, 89, .13);
             }
 
             .step:hover h3 {
@@ -1728,6 +1730,12 @@
 
         /* ── Tablet landscape: swap the desktop nav for the mobile panel ── */
         @media (max-width: 1024px) {
+
+            /* only the logo + hamburger pills remain, so the bar is shorter */
+            :root {
+                --nav-h: 78px;
+            }
+
             .nav-center,
             .nav-auth-box {
                 display: none;
@@ -1765,7 +1773,6 @@
                 text-align: left;
                 padding: 0 0 clamp(26px, 5vw, 38px);
                 border-radius: 0;
-                overflow: visible;
             }
 
             .step:last-child {
@@ -1786,12 +1793,6 @@
 
             .step:last-child::before {
                 display: none;
-            }
-
-            .step::after {
-                font-size: 58px;
-                top: -8px;
-                right: 0;
             }
 
             .step-num {
@@ -1868,11 +1869,6 @@
 
             .pricing-features li {
                 padding: 10px 0;
-            }
-
-            /* the heading wraps into the watermark numeral at this width */
-            .step::after {
-                display: none;
             }
         }
 
