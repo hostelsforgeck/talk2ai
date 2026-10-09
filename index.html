@@ -36,17 +36,101 @@
             z-index: 0;
         }
 
+        html {
+            scroll-behavior: smooth;
+            /* keep anchor targets clear of the sticky navbar */
+            scroll-padding-top: 96px;
+            -webkit-text-size-adjust: 100%;
+            text-size-adjust: 100%;
+            overflow-x: hidden;
+        }
+
         body {
             font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
             background: #f5f3ed;
             color: #2d2d2d;
             overflow-x: hidden;
             position: relative;
+            min-height: 100%;
+            -webkit-tap-highlight-color: rgba(74, 124, 89, 0.15);
         }
 
-        /* Smooth scroll behavior */
-        html {
-            scroll-behavior: smooth;
+        /* nothing may push the page sideways */
+        img,
+        svg,
+        video,
+        canvas {
+            max-width: 100%;
+        }
+
+        /* ── Corner system ──────────────────────────────────────────────
+           corner-shape: squircle is a progressive enhancement (Chrome 139+).
+           Browsers without it fall back to plain border-radius and keep the
+           exact geometry this design already had. Where it IS supported the
+           radii step up, because a squircle at a given radius reads tighter
+           than a circular corner at the same value. */
+        :root {
+            --r-btn: 12px;
+            --r-icon-sm: 12px;
+            --r-icon: 14px;
+            --r-icon-lg: 16px;
+            --r-panel: 16px;
+            --r-card: 20px;
+            --r-step: 18px;
+            --r-team: 18px;
+            --r-nav: 22px;
+            --r-nav-in: 14px;
+            --r-section: clamp(16px, 2.5vw, 24px);
+            --r-how: clamp(18px, 3vw, 28px);
+            --r-modal: clamp(20px, 4vw, 28px);
+        }
+
+        @supports (corner-shape: squircle) {
+            :root {
+                --r-btn: 15px;
+                --r-icon-sm: 15px;
+                --r-icon: 17px;
+                --r-icon-lg: 20px;
+                --r-panel: 20px;
+                --r-card: 26px;
+                --r-step: 23px;
+                --r-team: 23px;
+                --r-nav: 28px;
+                /* concentric: inner radius = outer - the 10px card padding */
+                --r-nav-in: 18px;
+                --r-section: clamp(20px, 3.1vw, 30px);
+                --r-how: clamp(23px, 3.75vw, 35px);
+                --r-modal: clamp(25px, 5vw, 35px);
+            }
+        }
+
+        /* One rule carries the shape; every element keeps its own radius.
+           Pills and circles are deliberately left out - squircling a shape
+           that is already fully round is where it reads as broken. */
+        .problem-card,
+        .feature-card,
+        .pricing-card,
+        .usecase-card,
+        .team-card,
+        .faq-item,
+        .testimonial-section,
+        .how-section,
+        .cta-section,
+        .trust-signals,
+        .step,
+        .mobile-nav__inner,
+        .mobile-nav__links a,
+        .mobile-nav__auth a,
+        .cs-modal,
+        .btn-primary,
+        .btn-secondary,
+        .email-input,
+        .email-submit,
+        .cs-btn,
+        .problem-icon,
+        .uc-icon,
+        .feature-icon {
+            corner-shape: squircle;
         }
 
         /* Performance optimizations */
@@ -164,20 +248,30 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            will-change: transform, background-color;
+            transition: background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                padding 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-
+        /* toggled from JS once the page scrolls - keeps the bar readable
+           over content instead of leaving it transparent */
+        .navbar.scrolled {
+            background: rgba(245, 243, 237, 0.82);
+            backdrop-filter: blur(14px) saturate(180%);
+            -webkit-backdrop-filter: blur(14px) saturate(180%);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 6px 24px rgba(0, 0, 0, 0.05);
+        }
 
         .nav-container {
             max-width: 1400px;
             margin: 0 auto;
-            padding: 0 32px;
+            padding: 0 clamp(16px, 3vw, 32px);
+            padding-left: max(clamp(16px, 3vw, 32px), env(safe-area-inset-left));
+            padding-right: max(clamp(16px, 3vw, 32px), env(safe-area-inset-right));
             display: flex;
             justify-content: space-between;
             align-items: center;
-            gap: 24px;
+            gap: clamp(12px, 2vw, 24px);
             position: relative;
             z-index: 1;
         }
@@ -350,16 +444,156 @@
             display: none;
             background: white;
             border: 1px solid rgba(0, 0, 0, 0.08);
-            padding: 10px 16px;
+            padding: 10px 14px;
             border-radius: 50px;
             cursor: pointer;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            /* 44px minimum touch target */
+            min-width: 48px;
+            min-height: 44px;
+            align-items: center;
+            justify-content: center;
+            color: #2d2d2d;
+            transition: box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .mobile-menu-btn:active {
+            transform: scale(0.94);
+            transition-duration: 0.1s;
         }
 
         .mobile-menu-btn svg {
             width: 24px;
             height: 24px;
-            stroke: #2d2d2d;
+            stroke: currentColor;
+            display: block;
+        }
+
+        /* swap burger <-> X off the button's own aria-expanded state */
+        .mobile-menu-btn .icon-close {
+            display: none;
+        }
+
+        .mobile-menu-btn[aria-expanded="true"] {
+            color: #4a7c59;
+        }
+
+        .mobile-menu-btn[aria-expanded="true"] .icon-menu {
+            display: none;
+        }
+
+        .mobile-menu-btn[aria-expanded="true"] .icon-close {
+            display: block;
+        }
+
+        /* ── Mobile nav panel ── */
+        .mobile-nav {
+            display: none;
+            position: absolute;
+            top: calc(100% + 8px);
+            left: clamp(16px, 3vw, 32px);
+            right: clamp(16px, 3vw, 32px);
+            z-index: 120;
+        }
+
+        .mobile-nav.open {
+            display: block;
+            animation: mobileNavIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes mobileNavIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px) scale(0.98);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        .mobile-nav__inner {
+            background: white;
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            border-radius: var(--r-nav);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.14);
+            padding: 10px;
+            transform-origin: top center;
+            /* never taller than the screen - scrolls internally on
+               short/landscape viewports */
+            max-height: calc(100vh - 110px);
+            max-height: calc(100dvh - 110px);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior: contain;
+        }
+
+        .mobile-nav__links {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .mobile-nav__links a {
+            display: flex;
+            align-items: center;
+            min-height: 50px;
+            padding: 12px 18px;
+            border-radius: var(--r-nav-in);
+            color: #2d2d2d;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 16px;
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        .mobile-nav__links a:active {
+            background: #f5f3ed;
+        }
+
+        .mobile-nav__links a.active {
+            background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
+            color: white;
+        }
+
+        .mobile-nav__auth {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-top: 10px;
+            padding-top: 12px;
+            border-top: 1px solid rgba(0, 0, 0, 0.07);
+        }
+
+        .mobile-nav__auth a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 50px;
+            padding: 12px 20px;
+            border-radius: var(--r-nav-in);
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 16px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .mobile-nav__auth a:active {
+            transform: scale(0.98);
+        }
+
+        .mobile-nav__signup {
+            background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
+            color: white;
+            box-shadow: 0 6px 16px rgba(74, 124, 89, 0.28);
+        }
+
+        .mobile-nav__login {
+            background: #f5f3ed;
+            color: #4a7c59;
+            border: 1px solid rgba(74, 124, 89, 0.22);
         }
 
 
@@ -381,17 +615,18 @@
         .hero {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 80px 24px 60px;
+            padding: clamp(40px, 7vw, 80px) clamp(16px, 4vw, 24px) clamp(36px, 6vw, 60px);
             text-align: center;
         }
 
         .hero h1 {
-            font-size: 56px;
+            font-size: clamp(2.125rem, 1.536rem + 2.62vw, 3.5rem);
             font-weight: 800;
             color: #2d2d2d;
-            line-height: 1.1;
-            margin-bottom: 24px;
-            letter-spacing: -1.5px;
+            line-height: 1.12;
+            margin-bottom: clamp(16px, 2.5vw, 24px);
+            letter-spacing: -0.03em;
+            text-wrap: balance;
             animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
         }
 
@@ -405,10 +640,10 @@
         }
 
         .hero p {
-            font-size: 20px;
+            font-size: clamp(0.97rem, 0.848rem + 0.54vw, 1.25rem);
             color: #6b6b6b;
             max-width: 680px;
-            margin: 0 auto 40px;
+            margin: 0 auto clamp(28px, 4vw, 40px);
             line-height: 1.6;
             font-weight: 500;
             animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.2s backwards;
@@ -416,20 +651,22 @@
 
         .hero-cta {
             display: flex;
-            gap: 16px;
+            gap: clamp(10px, 1.5vw, 16px);
             justify-content: center;
             align-items: center;
-            margin-bottom: 32px;
+            margin-bottom: clamp(24px, 3.5vw, 32px);
             flex-wrap: wrap;
             animation: fadeInUp 0.8s cubic-bezier(0.16, 1, 0.3, 1) 0.3s backwards;
         }
 
         .btn-primary {
-            padding: 16px 40px;
+            padding: 16px clamp(24px, 5vw, 40px);
+            min-height: 52px;
+            max-width: 100%;
             background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: var(--r-btn);
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
@@ -494,11 +731,13 @@
         }
 
         .btn-secondary {
-            padding: 16px 40px;
+            padding: 16px clamp(24px, 5vw, 40px);
+            min-height: 52px;
+            max-width: 100%;
             background: white;
             color: #4a7c59;
             border: 2px solid #4a7c59;
-            border-radius: 12px;
+            border-radius: var(--r-btn);
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
@@ -538,16 +777,18 @@
 
         .trust-signals {
             display: flex;
-            gap: 32px;
+            gap: clamp(14px, 3vw, 32px);
             justify-content: center;
             align-items: center;
             flex-wrap: wrap;
-            padding: 24px;
+            padding: clamp(16px, 3vw, 24px);
             background: rgba(255, 255, 255, 0.5);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            border-radius: 16px;
-            max-width: 700px;
+            border-radius: var(--r-panel);
+            /* hug the chips rather than stretching to a fixed 700px */
+            width: fit-content;
+            max-width: 100%;
             margin: 0 auto;
             border: 1px solid rgba(0, 0, 0, 0.06);
             animation: fadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) 0.3s backwards;
@@ -581,41 +822,43 @@
         .section {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 80px 24px;
+            padding: clamp(48px, 7vw, 80px) clamp(16px, 4vw, 24px);
             position: relative;
             z-index: 1;
         }
 
         .section-title {
             text-align: center;
-            font-size: 42px;
+            font-size: clamp(1.625rem, 1.196rem + 1.9vw, 2.625rem);
             font-weight: 800;
             color: #2d2d2d;
-            margin-bottom: 16px;
-            letter-spacing: -1px;
+            margin-bottom: clamp(10px, 1.5vw, 16px);
+            letter-spacing: -0.025em;
+            text-wrap: balance;
         }
 
         .section-subtitle {
             text-align: center;
-            font-size: 18px;
+            font-size: clamp(0.9375rem, 0.857rem + 0.36vw, 1.125rem);
             color: #6b6b6b;
             max-width: 600px;
-            margin: 0 auto 60px;
+            margin: 0 auto clamp(36px, 5vw, 60px);
+            text-wrap: pretty;
             font-weight: 500;
             line-height: 1.6;
         }
 
         .problem-cards {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 24px;
-            margin-bottom: 60px;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+            gap: clamp(16px, 2.5vw, 24px);
+            margin-bottom: clamp(40px, 6vw, 60px);
         }
 
         .problem-card {
             background: white;
-            padding: 32px;
-            border-radius: 20px;
+            padding: clamp(22px, 3.5vw, 32px);
+            border-radius: var(--r-card);
             border: 1px solid rgba(0, 0, 0, 0.06);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
             transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -635,7 +878,7 @@
             width: 48px;
             height: 48px;
             background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
-            border-radius: 12px;
+            border-radius: var(--r-icon-sm);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -666,14 +909,17 @@
 
         .features-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 32px;
+            /* 300px keeps this at 3 columns on desktop, so the six cards form
+               an even 3x2 instead of 4 + 2 orphans, and it matches the
+               use-cases grid above */
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+            gap: clamp(16px, 2.5vw, 32px);
         }
 
         .feature-card {
             background: white;
-            padding: 32px;
-            border-radius: 20px;
+            padding: clamp(22px, 3.5vw, 32px);
+            border-radius: var(--r-card);
             border: 1px solid rgba(0, 0, 0, 0.06);
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
             text-align: center;
@@ -699,7 +945,7 @@
             width: 64px;
             height: 64px;
             background: linear-gradient(135deg, rgba(74, 124, 89, 0.1) 0%, rgba(61, 104, 73, 0.1) 100%);
-            border-radius: 16px;
+            border-radius: var(--r-icon-lg);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -731,8 +977,8 @@
 
         .testimonial-section {
             background: white;
-            border-radius: 24px;
-            padding: 60px 40px;
+            border-radius: var(--r-section);
+            padding: clamp(32px, 5vw, 60px) clamp(20px, 4vw, 40px);
             border: 1px solid rgba(0, 0, 0, 0.06);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
             max-width: 900px;
@@ -758,7 +1004,7 @@
         }
 
         .testimonial-text {
-            font-size: 20px;
+            font-size: clamp(1rem, 0.9rem + 0.45vw, 1.25rem);
             color: #2d2d2d;
             line-height: 1.6;
             margin-bottom: 32px;
@@ -770,6 +1016,8 @@
             align-items: center;
             justify-content: center;
             gap: 16px;
+            flex-wrap: wrap;
+            text-align: left;
         }
 
         .author-avatar {
@@ -799,16 +1047,16 @@
 
         .pricing-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 32px;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+            gap: clamp(16px, 2.5vw, 32px);
             max-width: 1000px;
             margin: 0 auto;
         }
 
         .pricing-card {
             background: white;
-            padding: 40px 32px;
-            border-radius: 20px;
+            padding: clamp(28px, 4vw, 40px) clamp(22px, 3.5vw, 32px);
+            border-radius: var(--r-card);
             border: 2px solid rgba(0, 0, 0, 0.06);
             box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
             position: relative;
@@ -854,7 +1102,7 @@
         }
 
         .price {
-            font-size: 48px;
+            font-size: clamp(2.25rem, 1.9rem + 1.5vw, 3rem);
             font-weight: 800;
             color: #4a7c59;
             margin-bottom: 8px;
@@ -899,14 +1147,20 @@
         /* ── USE CASES ── */
         .usecases-grid {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 24px;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+            gap: clamp(16px, 2.5vw, 24px);
         }
 
         .usecase-card {
             background: white;
-            padding: 32px 28px;
-            border-radius: 20px;
+            /* icon in column 1 spanning the tag + heading rows, so the
+               text sits beside it instead of under it */
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            column-gap: 14px;
+            align-content: start;
+            padding: clamp(22px, 3.5vw, 32px) clamp(20px, 3vw, 28px);
+            border-radius: var(--r-card);
             border: 1px solid rgba(0, 0, 0, 0.06);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
             transition: all .4s cubic-bezier(0.16, 1, 0.3, 1);
@@ -927,11 +1181,12 @@
             width: 52px;
             height: 52px;
             background: linear-gradient(135deg, #4a7c59, #3d6849);
-            border-radius: 14px;
+            border-radius: var(--r-icon);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-bottom: 20px;
+            grid-area: 1 / 1 / 3 / 2;
+            align-self: start;
             transition: transform .4s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
@@ -943,7 +1198,10 @@
         }
 
         .uc-tag {
-            display: inline-block;
+            /* block + fit-content keeps the pill hugging its text while
+               dropping the extra line-box leading inline-block adds */
+            display: block;
+            width: fit-content;
             font-size: 11px;
             font-weight: 700;
             letter-spacing: .8px;
@@ -952,60 +1210,94 @@
             background: rgba(74, 124, 89, .1);
             padding: 4px 10px;
             border-radius: 20px;
-            margin-bottom: 12px;
+            grid-area: 1 / 2 / 2 / 3;
+            align-self: start;
+            margin-bottom: 6px;
         }
 
         .usecase-card h3 {
             font-size: 18px;
             font-weight: 700;
             color: #2d2d2d;
-            margin-bottom: 12px;
+            grid-area: 2 / 2 / 3 / 3;
+            align-self: start;
+            margin-bottom: 0;
         }
 
         .usecase-card p {
             font-size: 15px;
             color: #6b6b6b;
             line-height: 1.6;
+            grid-area: 3 / 1 / 4 / 3;
+            margin-top: 14px;
         }
 
         /* ── HOW IT WORKS ── */
         .how-section {
             background: white;
-            border-radius: 28px;
-            padding: 70px 40px;
+            border-radius: var(--r-how);
+            padding: clamp(36px, 5.5vw, 70px) clamp(20px, 4vw, 40px);
             border: 1px solid rgba(0, 0, 0, 0.06);
             box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
         }
 
         .steps {
+            --step-pad-top: clamp(14px, 2vw, 22px);
+            --node: 68px;
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 0;
+            gap: clamp(6px, 1.2vw, 18px);
             position: relative;
+            counter-reset: step;
         }
 
+        /* rail threading the three nodes, fading out at both ends */
         .steps::before {
             content: '';
             position: absolute;
-            top: 32px;
-            left: calc(16.67% + 16px);
-            right: calc(16.67% + 16px);
+            top: calc(var(--step-pad-top) + (var(--node) / 2));
+            left: 16.67%;
+            right: 16.67%;
             height: 2px;
-            background: linear-gradient(90deg, #4a7c59, #3d6849);
-            opacity: .25;
+            background: linear-gradient(90deg,
+                    rgba(74, 124, 89, 0) 0%,
+                    rgba(74, 124, 89, .3) 16%,
+                    rgba(74, 124, 89, .3) 84%,
+                    rgba(74, 124, 89, 0) 100%);
             z-index: 0;
         }
 
         .step {
+            counter-increment: step;
             text-align: center;
-            padding: 0 24px;
+            padding: var(--step-pad-top) clamp(10px, 1.8vw, 22px) clamp(18px, 2.4vw, 26px);
             position: relative;
             z-index: 1;
+            overflow: hidden;
+            border-radius: var(--r-step);
+            transition: background-color .35s ease;
+        }
+
+        /* oversized watermark numeral */
+        .step::after {
+            content: counter(step);
+            position: absolute;
+            top: -14px;
+            right: 10px;
+            font-size: 92px;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -0.05em;
+            color: rgba(74, 124, 89, .07);
+            pointer-events: none;
+            z-index: -1;
+            transition: color .35s ease;
         }
 
         .step-num {
-            width: 64px;
-            height: 64px;
+            position: relative;
+            width: var(--node);
+            height: var(--node);
             border-radius: 50%;
             background: linear-gradient(135deg, #4a7c59, #3d6849);
             color: white;
@@ -1016,12 +1308,31 @@
             align-items: center;
             justify-content: center;
             margin: 0 auto 20px;
-            box-shadow: 0 8px 20px rgba(74, 124, 89, .3);
-            transition: transform .3s ease;
+            /* the white ring makes the rail appear to stop at each node */
+            box-shadow: 0 0 0 7px white, 0 8px 20px rgba(74, 124, 89, .3);
+            transition: transform .35s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        .step:hover .step-num {
-            transform: scale(1.1);
+        .step h3 {
+            transition: color .25s ease;
+        }
+
+        @media (hover: hover) {
+            .step:hover {
+                background: rgba(74, 124, 89, .045);
+            }
+
+            .step:hover .step-num {
+                transform: scale(1.08);
+            }
+
+            .step:hover::after {
+                color: rgba(74, 124, 89, .13);
+            }
+
+            .step:hover h3 {
+                color: #3d6849;
+            }
         }
 
         .step h3 {
@@ -1039,20 +1350,22 @@
 
         /* ── TEAM ── */
         .team-grid {
-            display: flex;
-            flex-direction: row;
-            gap: 20px;
-            justify-content: center;
-            align-items: center;
-            flex-wrap: wrap;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr));
+            gap: clamp(14px, 2vw, 20px);
+            max-width: 1140px;
+            margin-inline: auto;
+            align-items: start;
         }
 
         .team-card {
             position: relative;
-            flex: 0 0 auto;
-            width: 220px;
-            height: 320px;
-            border-radius: 18px;
+            width: 100%;
+            max-width: 300px;
+            justify-self: center;
+            /* scales with the column instead of locking to 220x320 */
+            aspect-ratio: 11 / 16;
+            border-radius: var(--r-team);
             overflow: hidden;
             cursor: pointer;
             transform-style: preserve-3d;
@@ -1133,12 +1446,12 @@
             left: 0;
             right: 0;
             z-index: 4;
-            padding: 0 20px 22px;
+            padding: 0 clamp(14px, 1.6vw, 20px) clamp(16px, 1.8vw, 22px);
         }
 
         .team-card__name {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 24px;
+            font-size: clamp(1.25rem, 1.1rem + 0.5vw, 1.5rem);
             font-weight: 700;
             color: #ffffff;
             letter-spacing: -0.02em;
@@ -1205,7 +1518,7 @@
 
         .faq-item {
             background: white;
-            border-radius: 16px;
+            border-radius: var(--r-panel);
             margin-bottom: 12px;
             border: 1px solid rgba(0, 0, 0, 0.06);
             overflow: hidden;
@@ -1221,17 +1534,17 @@
             width: 100%;
             background: none;
             border: none;
-            padding: 22px 28px;
+            padding: clamp(16px, 2.5vw, 22px) clamp(18px, 3vw, 28px);
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
             font-family: 'Plus Jakarta Sans', sans-serif;
-            font-size: 18px;
+            font-size: clamp(0.975rem, 0.9rem + 0.35vw, 1.125rem);
             font-weight: 700;
             color: #2d2d2d;
             text-align: left;
-            gap: 16px;
+            gap: 12px;
             transition: color .2s ease;
         }
 
@@ -1271,8 +1584,8 @@
         .faq-answer {
             max-height: 0;
             overflow: hidden;
-            transition: max-height .4s cubic-bezier(0.16, 1, 0.3, 1), padding .3s ease;
-            padding: 0 28px;
+            transition: max-height .4s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 0 clamp(18px, 3vw, 28px);
         }
 
         .faq-answer p {
@@ -1282,8 +1595,10 @@
             padding-bottom: 22px;
         }
 
+        /* JS sets max-height to the answer's real scrollHeight, so wrapped text
+           on narrow screens is never clipped. This is the no-JS fallback. */
         .faq-item.open .faq-answer {
-            max-height: 200px;
+            max-height: 1000px;
         }
 
         .section-label {
@@ -1298,23 +1613,24 @@
 
         .cta-section {
             background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
-            border-radius: 24px;
-            padding: 80px 40px;
+            border-radius: var(--r-section);
+            padding: clamp(40px, 6.5vw, 80px) clamp(20px, 4vw, 40px);
             text-align: center;
             color: white;
             box-shadow: 0 12px 40px rgba(74, 124, 89, 0.3);
         }
 
         .cta-section h2 {
-            font-size: 42px;
+            font-size: clamp(1.625rem, 1.196rem + 1.9vw, 2.625rem);
             font-weight: 800;
-            margin-bottom: 20px;
-            letter-spacing: -1px;
+            margin-bottom: clamp(14px, 2vw, 20px);
+            letter-spacing: -0.025em;
+            text-wrap: balance;
         }
 
         .cta-section p {
-            font-size: 18px;
-            margin-bottom: 40px;
+            font-size: clamp(0.9375rem, 0.857rem + 0.36vw, 1.125rem);
+            margin-bottom: clamp(28px, 4vw, 40px);
             opacity: 0.95;
             max-width: 600px;
             margin-left: auto;
@@ -1332,10 +1648,11 @@
         }
 
         .email-input {
-            flex: 1;
-            min-width: 250px;
+            flex: 1 1 220px;
+            min-width: min(100%, 220px);
             padding: 16px 20px;
-            border-radius: 12px;
+            min-height: 52px;
+            border-radius: var(--r-btn);
             border: none;
             font-size: 15px;
             font-family: 'Plus Jakarta Sans', sans-serif;
@@ -1352,11 +1669,12 @@
         }
 
         .email-submit {
-            padding: 16px 40px;
+            padding: 16px clamp(24px, 5vw, 40px);
+            min-height: 52px;
             background: white;
             color: #4a7c59;
             border: none;
-            border-radius: 12px;
+            border-radius: var(--r-btn);
             font-size: 16px;
             font-weight: 700;
             cursor: pointer;
@@ -1386,8 +1704,9 @@
         footer {
             background: white;
             border-top: 1px solid rgba(0, 0, 0, 0.06);
-            padding: 40px 24px;
-            margin-top: 80px;
+            padding: clamp(28px, 4vw, 40px) clamp(16px, 4vw, 24px);
+            padding-bottom: calc(clamp(28px, 4vw, 40px) + env(safe-area-inset-bottom));
+            margin-top: clamp(48px, 7vw, 80px);
             position: relative;
             z-index: 1;
         }
@@ -1401,117 +1720,290 @@
             font-weight: 500;
         }
 
-        @media (max-width: 1024px) {
-            .nav-center {
-                display: none;
-            }
+        /* =================================================================
+           RESPONSIVE
+           Type and spacing are fluid via clamp() in the rules above, so
+           these breakpoints only need to handle layout changes.
+           ================================================================= */
 
+        /* ── Tablet landscape: swap the desktop nav for the mobile panel ── */
+        @media (max-width: 1024px) {
+            .nav-center,
             .nav-auth-box {
                 display: none;
             }
 
             .mobile-menu-btn {
-                display: block;
+                display: inline-flex;
             }
 
             .nav-container {
-                padding: 0 24px;
-            }
-
-            .team-grid {
-                gap: 16px;
-                justify-content: center;
-            }
-
-            .team-card {
-                width: 200px;
-                height: 280px;
-            }
-
-            .usecases-grid {
-                grid-template-columns: repeat(2, 1fr);
+                justify-content: space-between;
             }
         }
 
-        @media (max-width: 768px) {
-            .hero h1 {
-                font-size: 36px;
-            }
-
-            .hero p {
-                font-size: 18px;
-            }
-
-            .section-title {
-                font-size: 32px;
-            }
-
-            .problem-cards,
-            .features-grid,
-            .pricing-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .testimonial-section {
-                padding: 40px 24px;
-            }
-
-            .testimonial-text {
-                font-size: 18px;
-            }
-
-            .cta-section h2 {
-                font-size: 32px;
-            }
-
-            .email-form {
-                flex-direction: column;
-            }
-
-            .email-input {
-                width: 100%;
-            }
-
-            .nav-container {
-                padding: 0 16px;
-            }
-
-            .logo-box {
-                padding: 10px 20px;
-            }
-
-            .logo {
-                font-size: 18px;
-            }
-
+        /* ── Tablet portrait and below: 3 steps side by side get too
+              cramped, so the row becomes a vertical timeline ── */
+        @media (max-width: 900px) {
             .steps {
+                --node: 56px;
                 grid-template-columns: 1fr;
+                gap: 0;
+                max-width: 540px;
+                margin-inline: auto;
             }
 
+            /* the horizontal rail is replaced by a per-step vertical one */
             .steps::before {
                 display: none;
             }
 
-            .usecases-grid {
-                grid-template-columns: repeat(2, 1fr);
+            .step {
+                display: grid;
+                grid-template-columns: var(--node) minmax(0, 1fr);
+                column-gap: 18px;
+                text-align: left;
+                padding: 0 0 clamp(26px, 5vw, 38px);
+                border-radius: 0;
+                overflow: visible;
             }
 
-            .team-grid {
+            .step:last-child {
+                padding-bottom: 0;
+            }
+
+            .step::before {
+                content: '';
+                position: absolute;
+                left: calc((var(--node) / 2) - 1px);
+                top: calc(var(--node) + 6px);
+                bottom: 0;
+                width: 2px;
+                background: linear-gradient(180deg,
+                        rgba(74, 124, 89, .3),
+                        rgba(74, 124, 89, .05));
+            }
+
+            .step:last-child::before {
+                display: none;
+            }
+
+            .step::after {
+                font-size: 58px;
+                top: -8px;
+                right: 0;
+            }
+
+            .step-num {
+                grid-row: 1 / span 2;
+                align-self: start;
+                font-size: 19px;
+                margin: 0;
+                box-shadow: 0 6px 16px rgba(74, 124, 89, .3);
+            }
+
+            .step h3 {
+                grid-column: 2;
+                align-self: start;
+                /* optically centres the heading against the node */
+                margin-top: 16px;
+                margin-bottom: 8px;
+            }
+
+            .step p {
+                grid-column: 2;
+            }
+        }
+
+        /* ── Large phone / small tablet ── */
+        @media (max-width: 768px) {
+            html {
+                scroll-padding-top: 84px;
+            }
+
+            .testimonial-author {
+                justify-content: center;
+                text-align: center;
+            }
+
+            .faq-answer p {
+                padding-bottom: 20px;
+            }
+        }
+
+        /* ── Phone: stack the call-to-action pairs for full-width tap targets ── */
+        @media (max-width: 560px) {
+            .hero-cta {
                 flex-direction: column;
-                align-items: center;
+                align-items: stretch;
             }
 
-            .team-card {
-                width: 280px;
-                height: 360px;
+            .hero-cta .btn-primary,
+            .hero-cta .btn-secondary {
+                width: 100%;
+                text-align: center;
             }
 
-            .how-section {
-                padding: 40px 24px;
+            .email-form {
+                flex-direction: column;
+                align-items: stretch;
             }
 
-            .cta-section {
-                padding: 50px 24px;
+            .email-input,
+            .email-submit {
+                width: 100%;
+                /* the form is a column here, so flex-basis would set the
+                   HEIGHT - keep them at their natural height */
+                flex: 0 0 auto;
+            }
+
+            .trust-signals {
+                gap: 12px 18px;
+            }
+
+            .testimonial-author {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .pricing-features li {
+                padding: 10px 0;
+            }
+
+            /* the heading wraps into the watermark numeral at this width */
+            .step::after {
+                display: none;
+            }
+        }
+
+        /* ── Small phone ── */
+        @media (max-width: 400px) {
+            .logo {
+                font-size: 17px;
+            }
+
+            .logo-img {
+                width: 22px;
+                margin-right: 6px;
+            }
+
+            .logo-box {
+                padding: 8px 10px;
+            }
+
+            .mobile-nav__links a,
+            .mobile-nav__auth a {
+                font-size: 15px;
+                min-height: 48px;
+            }
+
+            .uc-icon {
+                width: 46px;
+                height: 46px;
+                border-radius: var(--r-icon-sm);
+            }
+
+            .uc-icon svg {
+                width: 23px;
+                height: 23px;
+            }
+
+            .feature-icon {
+                width: 56px;
+                height: 56px;
+            }
+
+            .feature-icon svg {
+                width: 28px;
+                height: 28px;
+            }
+        }
+
+        /* ── Short / landscape phones: reclaim vertical space ── */
+        @media (max-height: 560px) and (orientation: landscape) {
+            .hero {
+                padding-top: 32px;
+                padding-bottom: 28px;
+            }
+
+            .section {
+                padding-top: 40px;
+                padding-bottom: 40px;
+            }
+
+            .mobile-nav__inner {
+                max-height: calc(100vh - 90px);
+                max-height: calc(100dvh - 90px);
+            }
+        }
+
+        /* ── Touch devices: no hover, so don't leave hover states stuck ── */
+        @media (hover: none) {
+
+            .problem-card:hover,
+            .feature-card:hover,
+            .pricing-card:hover,
+            .usecase-card:hover,
+            .faq-item:hover,
+            .trust-item:hover,
+            .logo-box:hover,
+            .btn-primary:hover,
+            .btn-secondary:hover,
+            .email-submit:hover,
+            .cs-btn:hover {
+                transform: none;
+            }
+
+            .problem-card:hover .problem-icon,
+            .feature-card:hover .feature-icon,
+            .usecase-card:hover .uc-icon,
+            .step:hover .step-num,
+            .trust-item:hover svg {
+                transform: none;
+            }
+
+            .cs-close:hover {
+                transform: none;
+            }
+
+            /* the video swap is driven by .is-playing (tap) instead */
+            .team-card:hover .team-card__thumb {
+                opacity: 1;
+            }
+
+            .team-card:hover .team-card__video {
+                opacity: 0;
+            }
+        }
+
+        /* tap-to-play state for the team cards on touch devices */
+        .team-card.is-playing .team-card__thumb {
+            opacity: 0;
+        }
+
+        .team-card.is-playing .team-card__video {
+            opacity: 1;
+        }
+
+        /* ── Respect the OS "reduce motion" setting ── */
+        @media (prefers-reduced-motion: reduce) {
+
+            html {
+                scroll-behavior: auto;
+            }
+
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+
+            .animate-on-scroll {
+                opacity: 1;
+                transform: none;
             }
         }
     </style>
@@ -1545,11 +2037,31 @@
                 <a href="#" onclick="openComingSoon(event)">Sign Up</a>
             </div>
 
-            <button class="mobile-menu-btn">
-                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <button class="mobile-menu-btn" id="mobileMenuBtn" type="button" aria-label="Open menu"
+                aria-expanded="false" aria-controls="mobileNav">
+                <svg class="icon-menu" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
                 </svg>
+                <svg class="icon-close" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
             </button>
+
+            <!-- Mobile nav: mirrors the desktop links + auth actions -->
+            <div class="mobile-nav" id="mobileNav">
+                <div class="mobile-nav__inner">
+                    <nav class="mobile-nav__links" aria-label="Main">
+                        <a href="#" class="active">Home</a>
+                        <a href="#usecases">Use Cases</a>
+                        <a href="#how">How It Works</a>
+                        <a href="#features">Features</a>
+                    </nav>
+                    <div class="mobile-nav__auth">
+                        <a href="#" class="mobile-nav__signup" onclick="openComingSoon(event)">Sign Up</a>
+                        <a href="#" class="mobile-nav__login" onclick="openComingSoon(event)">Login</a>
+                    </div>
+                </div>
+            </div>
         </div>
     </nav>
 
@@ -1568,21 +2080,21 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
                 </svg>
-                RAG-powered accuracy
+                RAG-powered
             </div>
             <div class="trust-item">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M13 10V3L4 14h7v7l9-11h-7z" />
                 </svg>
-                Instant responses
+                Instant answers
             </div>
             <div class="trust-item">
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
-                End-to-end encrypted
+                Encrypted
             </div>
         </div>
     </section>
@@ -1869,7 +2381,7 @@
                 </div>
             </div>
 
-            <!-- Card 5: Nahana -->
+            <!-- Card 5: Nahana - temporarily hidden
             <div class="team-card animate-on-scroll" data-index="4">
                 <div class="team-card__thumb">
                     <div class="thumb-loading">
@@ -1888,6 +2400,7 @@
                     <p class="team-card__desc">Mentored the team  &amp; supported the project from concept to completion.</p>
                 </div>
             </div>
+            -->
 
 
 
@@ -2013,36 +2526,58 @@
     </footer>
 
     <script>
-        // Noise canvas effect
+        // Noise: build one small tile and repeat it as a fill pattern.
+        // The previous version ran a per-pixel JS loop across the whole
+        // viewport on every resize event - and on mobile, resize fires
+        // constantly as the address bar shows and hides.
         const canvas = document.getElementById('noise-canvas');
         if (canvas) {
             const ctx = canvas.getContext('2d');
+            const TILE = 128;
+            let pattern = null;
+            let lastW = 0;
+            let lastH = 0;
 
-            function resizeCanvas() {
-                canvas.width = window.innerWidth;
-                canvas.height = window.innerHeight;
-            }
-
-            function drawNoise() {
-                const imageData = ctx.createImageData(canvas.width, canvas.height);
-                const buffer = new Uint32Array(imageData.data.buffer);
-                const len = buffer.length;
-
-                for (let i = 0; i < len; i++) {
-                    if (Math.random() < 0.5) {
-                        buffer[i] = 0xff000000;
-                    }
+            function buildNoisePattern() {
+                const tile = document.createElement('canvas');
+                tile.width = TILE;
+                tile.height = TILE;
+                const tctx = tile.getContext('2d');
+                const img = tctx.createImageData(TILE, TILE);
+                const buf = new Uint32Array(img.data.buffer);
+                for (let i = 0; i < buf.length; i++) {
+                    buf[i] = Math.random() < 0.5 ? 0xff000000 : 0;
                 }
-
-                ctx.putImageData(imageData, 0, 0);
+                tctx.putImageData(img, 0, 0);
+                pattern = ctx.createPattern(tile, 'repeat');
             }
 
-            resizeCanvas();
-            drawNoise();
+            function paintNoise() {
+                const w = window.innerWidth;
+                const h = window.innerHeight;
+                canvas.width = w;
+                canvas.height = h;
+                // resizing the bitmap resets context state, so set fill after
+                ctx.fillStyle = pattern;
+                ctx.fillRect(0, 0, w, h);
+                lastW = w;
+                lastH = h;
+            }
+
+            buildNoisePattern();
+            paintNoise();
+
+            let noiseRaf = 0;
             window.addEventListener('resize', () => {
-                resizeCanvas();
-                drawNoise();
-            });
+                // ignore the small height-only changes caused by the mobile
+                // address bar collapsing while scrolling
+                if (window.innerWidth === lastW && Math.abs(window.innerHeight - lastH) < 140) return;
+                if (noiseRaf) cancelAnimationFrame(noiseRaf);
+                noiseRaf = requestAnimationFrame(() => {
+                    noiseRaf = 0;
+                    paintNoise();
+                });
+            }, { passive: true });
         }
 
         // Navbar scroll
@@ -2051,9 +2586,49 @@
             navbar.classList.toggle('scrolled', window.scrollY > 20);
         }, { passive: true });
 
+        // ── Mobile nav ──
+        const menuBtn = document.getElementById('mobileMenuBtn');
+        const mobileNav = document.getElementById('mobileNav');
+
+        function setMenu(open) {
+            mobileNav.classList.toggle('open', open);
+            menuBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+            menuBtn.setAttribute('aria-label', open ? 'Close menu' : 'Open menu');
+        }
+
+        if (menuBtn && mobileNav) {
+            menuBtn.addEventListener('click', e => {
+                e.stopPropagation();
+                setMenu(!mobileNav.classList.contains('open'));
+            });
+
+            // picking any destination dismisses the panel
+            mobileNav.querySelectorAll('a').forEach(a => {
+                a.addEventListener('click', () => setMenu(false));
+            });
+
+            // tapping outside dismisses it
+            document.addEventListener('click', e => {
+                if (!mobileNav.classList.contains('open')) return;
+                if (!mobileNav.contains(e.target) && !menuBtn.contains(e.target)) setMenu(false);
+            });
+
+            document.addEventListener('keydown', e => {
+                if (e.key === 'Escape' && mobileNav.classList.contains('open')) {
+                    setMenu(false);
+                    menuBtn.focus();
+                }
+            });
+
+            // rotating or resizing up to desktop must not leave it hanging open
+            window.addEventListener('resize', () => {
+                if (window.innerWidth > 1024) setMenu(false);
+            }, { passive: true });
+        }
+
         // Scroll-based navigation highlighting
         const sections = document.querySelectorAll('section[id]');
-        const navLinks = document.querySelectorAll('.nav-links-box a');
+        const navLinks = document.querySelectorAll('.nav-links-box a, .mobile-nav__links a');
 
         function updateActiveNavLink() {
             const scrollPosition = window.scrollY + 100; // Offset for better UX
@@ -2092,17 +2667,25 @@
         // Update on page load
         updateActiveNavLink();
 
-        // Handle navbar click for smooth scroll
-        document.querySelectorAll('.nav-links-box a').forEach(link => {
+        // Handle navbar click for smooth scroll, offsetting the sticky navbar
+        // so the target heading doesn't land underneath it
+        document.querySelectorAll('.nav-links-box a, .mobile-nav__links a').forEach(link => {
             link.addEventListener('click', function (e) {
                 const href = this.getAttribute('href');
-                if (href.startsWith('#') && href !== '#') {
-                    e.preventDefault();
-                    const targetSection = document.querySelector(href);
-                    if (targetSection) {
-                        targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                    }
+                if (!href || !href.startsWith('#')) return;
+                e.preventDefault();
+
+                if (href === '#') {
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return;
                 }
+
+                const targetSection = document.querySelector(href);
+                if (!targetSection) return;
+
+                const offset = (navbar ? navbar.offsetHeight : 0) + 12;
+                const top = targetSection.getBoundingClientRect().top + window.scrollY - offset;
+                window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
             });
         });
 
@@ -2112,23 +2695,98 @@
         }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
         document.querySelectorAll('.animate-on-scroll').forEach(el => observer.observe(el));
 
-        // FAQ accordion
+        // FAQ accordion. The answer's height is measured rather than capped,
+        // because a fixed cap clips answers once the text wraps on a phone.
+        function closeFaq(item) {
+            const answer = item.querySelector('.faq-answer');
+            const q = item.querySelector('.faq-question');
+
+            // give it a concrete height again so it has something to animate from
+            if (answer && answer.style.maxHeight === 'none') {
+                answer.style.maxHeight = answer.scrollHeight + 'px';
+                void answer.offsetHeight;
+            }
+
+            item.classList.remove('open');
+            if (answer) answer.style.maxHeight = '';
+            if (q) q.setAttribute('aria-expanded', 'false');
+        }
+
+        function openFaq(item) {
+            const answer = item.querySelector('.faq-answer');
+            const q = item.querySelector('.faq-question');
+
+            item.classList.add('open');
+            if (q) q.setAttribute('aria-expanded', 'true');
+            if (!answer) return;
+
+            // animate to the measured height...
+            answer.style.maxHeight = answer.scrollHeight + 'px';
+
+            // ...then drop the cap, so no later reflow can clip the answer -
+            // a narrow screen, a rotation, or the webfont swapping in all
+            // change how the text wraps after this point.
+            const release = () => {
+                if (item.classList.contains('open')) answer.style.maxHeight = 'none';
+            };
+            answer.addEventListener('transitionend', function onEnd(e) {
+                if (e.propertyName !== 'max-height') return;
+                answer.removeEventListener('transitionend', onEnd);
+                release();
+            });
+            setTimeout(release, 450);
+        }
+
         document.querySelectorAll('.faq-question').forEach(btn => {
+            btn.setAttribute('aria-expanded', 'false');
             btn.addEventListener('click', () => {
                 const item = btn.parentElement;
-                const isOpen = item.classList.contains('open');
-                document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
-                if (!isOpen) item.classList.add('open');
+                const wasOpen = item.classList.contains('open');
+                document.querySelectorAll('.faq-item').forEach(closeFaq);
+                if (!wasOpen) openFaq(item);
             });
         });
 
-        // Team cards video functionality
+        // rotating a phone rewraps the text, so uncap the open answer
+        window.addEventListener('resize', () => {
+            const answer = document.querySelector('.faq-item.open .faq-answer');
+            if (answer) answer.style.maxHeight = 'none';
+        }, { passive: true });
+
+        // Team cards. Hover-to-play and the tilt only exist on devices with a
+        // real pointer; touch devices get tap-to-play instead, so the videos
+        // are reachable at all on a phone.
+        const finePointer = window.matchMedia('(hover: hover) and (pointer: fine)');
+
+        function playOnlyCard(card) {
+            document.querySelectorAll('.team-card.is-playing').forEach(other => {
+                if (other === card) return;
+                other.classList.remove('is-playing');
+                const v = other.querySelector('video');
+                if (v) {
+                    v.pause();
+                    v.currentTime = 0;
+                }
+            });
+
+            const video = card.querySelector('video');
+            const nowPlaying = card.classList.toggle('is-playing');
+            if (!video) return;
+            if (nowPlaying) {
+                video.play().catch(() => { });
+            } else {
+                video.pause();
+                video.currentTime = 0;
+            }
+        }
+
         document.querySelectorAll('.team-card').forEach(card => {
             const video = card.querySelector('video');
             const thumb = card.querySelector('.team-card__thumb');
 
-            /* ── Tilt effect ── */
+            /* ── Tilt effect (pointer devices only) ── */
             card.addEventListener('mousemove', e => {
+                if (!finePointer.matches) return;
                 const r = card.getBoundingClientRect();
                 const x = (e.clientX - r.left) / r.width - 0.5;
                 const y = (e.clientY - r.top) / r.height - 0.5;
@@ -2137,6 +2795,7 @@
 
             card.addEventListener('mouseleave', () => {
                 card.style.transform = '';
+                if (!finePointer.matches) return;
                 if (video) {
                     video.pause();
                     video.currentTime = 0;
@@ -2144,9 +2803,25 @@
             });
 
             card.addEventListener('mouseenter', () => {
+                if (!finePointer.matches) return;
                 if (video) {
                     video.play().catch(() => { });
                 }
+            });
+
+            /* ── Touch: tap a card to play its clip ── */
+            card.setAttribute('tabindex', '0');
+            card.setAttribute('role', 'button');
+
+            card.addEventListener('click', () => {
+                if (finePointer.matches) return;
+                playOnlyCard(card);
+            });
+
+            card.addEventListener('keydown', e => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                e.preventDefault();
+                playOnlyCard(card);
             });
 
             /* ── Canvas thumbnail: first frame ── */
@@ -2190,7 +2865,8 @@
             z-index: 2000;
             align-items: center;
             justify-content: center;
-            padding: 24px;
+            padding: clamp(16px, 4vw, 24px);
+            overflow-y: auto;
             animation: csFadeIn 0.25s ease;
         }
 
@@ -2204,10 +2880,13 @@
         .cs-modal {
             position: relative;
             background: #ffffff;
-            border-radius: 28px;
+            border-radius: var(--r-modal);
             width: 100%;
             max-width: 440px;
-            overflow: hidden;
+            /* scrolls internally rather than overflowing a short screen */
+            max-height: calc(100dvh - 2 * clamp(16px, 4vw, 24px));
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
             box-shadow: 0 30px 90px rgba(0, 0, 0, 0.35);
             animation: csPop 0.5s cubic-bezier(0.16, 1, 0.3, 1);
         }
@@ -2220,7 +2899,7 @@
         /* Hero area with the rotating logo */
         .cs-hero {
             position: relative;
-            padding: 46px 32px 32px;
+            padding: clamp(32px, 7vw, 46px) clamp(20px, 5vw, 32px) clamp(24px, 5vw, 32px);
             text-align: center;
             background:
                 radial-gradient(120% 90% at 50% 0%, rgba(74, 124, 89, 0.16) 0%, rgba(74, 124, 89, 0) 55%),
@@ -2245,9 +2924,10 @@
 
         .cs-logo-wrap {
             position: relative;
-            width: 124px;
-            height: 124px;
-            margin: 0 auto 22px;
+            width: clamp(96px, 26vw, 124px);
+            aspect-ratio: 1;
+            height: auto;
+            margin: 0 auto clamp(16px, 3vw, 22px);
             display: flex;
             align-items: center;
             justify-content: center;
@@ -2279,8 +2959,8 @@
         /* the logo, rotating clockwise */
         .cs-logo-spin {
             position: relative;
-            width: 84px;
-            height: 84px;
+            width: 68%;
+            height: 68%;
             object-fit: contain;
             z-index: 2;
             animation: csSpin 14s linear infinite;
@@ -2290,12 +2970,12 @@
         @keyframes csSpinRev { to { transform: rotate(-360deg); } }
 
         .cs-body {
-            padding: 26px 32px 34px;
+            padding: clamp(20px, 4vw, 26px) clamp(20px, 5vw, 32px) clamp(26px, 5vw, 34px);
             text-align: center;
         }
 
         .cs-title {
-            font-size: 25px;
+            font-size: clamp(1.3rem, 1.15rem + 0.55vw, 1.5625rem);
             font-weight: 800;
             color: #2d2d2d;
             letter-spacing: -0.6px;
@@ -2321,10 +3001,11 @@
             position: relative;
             width: 100%;
             padding: 15px 24px;
+            min-height: 52px;
             background: linear-gradient(135deg, #4a7c59 0%, #3d6849 100%);
             color: white;
             border: none;
-            border-radius: 12px;
+            border-radius: var(--r-btn);
             font-size: 15px;
             font-weight: 700;
             cursor: pointer;
@@ -2359,10 +3040,10 @@
 
         .cs-close {
             position: absolute;
-            top: 16px;
-            right: 16px;
-            width: 38px;
-            height: 38px;
+            top: 10px;
+            right: 10px;
+            width: 44px;
+            height: 44px;
             border: none;
             background: transparent;
             color: #6b6b6b;

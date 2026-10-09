@@ -72,6 +72,8 @@
         <style>
           :host {
             position: absolute;
+            left: 0;
+            top: 0;
             pointer-events: none;
             z-index: 2147483647;
           }
@@ -94,6 +96,13 @@
 
   function init() {
     if (document.querySelector('click-spark')) {
+      return;
+    }
+
+    // Skip on touch devices and when motion is reduced: it would fire on
+    // every tap, and it absolutely-positions an element at pageX/pageY,
+    // which can push the document wider than the viewport.
+    if (window.matchMedia('(hover: none), (pointer: coarse), (prefers-reduced-motion: reduce)').matches) {
       return;
     }
 
