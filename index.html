@@ -36,6 +36,33 @@
             z-index: 0;
         }
 
+        /* ── Lenis smooth scroll (js/lenis.min.js) ── */
+        html.lenis,
+        html.lenis body {
+            height: auto;
+        }
+
+        /* Lenis animates the window's scroll position itself, so native smooth
+           scrolling would fight it - hand over once Lenis is actually running */
+        html.lenis {
+            scroll-behavior: auto;
+        }
+
+        /* while a modal holds the page, nothing scrolls behind it */
+        .lenis.lenis-stopped {
+            overflow: clip;
+        }
+
+        /* panels that scroll internally keep their own gesture, and keep it
+           even while Lenis is stopped - without this they'd be frozen too */
+        .lenis [data-lenis-prevent] {
+            overscroll-behavior: contain;
+        }
+
+        .lenis.lenis-smooth iframe {
+            pointer-events: none;
+        }
+
         html {
             scroll-behavior: smooth;
             /* keep anchor targets clear of the sticky navbar */
@@ -258,18 +285,24 @@
             position: sticky;
             top: 0;
             z-index: 100;
-            transition: background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-                box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-                padding 0.3s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* toggled from JS once the page scrolls - keeps the bar readable
-           over content instead of leaving it transparent */
-        .navbar.scrolled {
+        .navbar::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            pointer-events: none;
             background: rgba(245, 243, 237, 0.82);
             backdrop-filter: blur(14px) saturate(180%);
             -webkit-backdrop-filter: blur(14px) saturate(180%);
-            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.05), 0 6px 24px rgba(0, 0, 0, 0.05);
+            mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+            -webkit-mask-image: linear-gradient(to bottom, #000 55%, transparent 100%);
+            transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .navbar.scrolled::before {
+            opacity: 1;
         }
 
         .nav-container {
@@ -2045,7 +2078,7 @@
 
             <!-- Mobile nav: mirrors the desktop links + auth actions -->
             <div class="mobile-nav" id="mobileNav">
-                <div class="mobile-nav__inner">
+                <div class="mobile-nav__inner" data-lenis-prevent>
                     <nav class="mobile-nav__links" aria-label="Main">
                         <a href="#" class="active">Home</a>
                         <a href="#usecases">Use Cases</a>
@@ -2521,7 +2554,15 @@
         </div>
     </footer>
 
+    <script src="js/lenis.min.js"></script>
     <script>
+        // ── Lenis smooth scroll ──
+        // It drives the real window scroll, so every `scroll` listener below
+        // (navbar state, active-link highlighting) keeps working as-is.
+        // autoRaf lets Lenis own its animation frame; respectReducedMotion is
+        // on by default, so the OS setting already disables the easing.
+        const lenis = new Lenis({ autoRaf: true });
+
         // Noise: build one small tile and repeat it as a fill pattern.
         // The previous version ran a per-pixel JS loop across the whole
         // viewport on every resize event - and on mobile, resize fires
@@ -2663,25 +2704,32 @@
         // Update on page load
         updateActiveNavLink();
 
-        // Handle navbar click for smooth scroll, offsetting the sticky navbar
-        // so the target heading doesn't land underneath it
-        document.querySelectorAll('.nav-links-box a, .mobile-nav__links a').forEach(link => {
+        // Every in-page link scrolls through Lenis, offsetting the sticky
+        // navbar so the target heading doesn't land underneath it. This has
+        // to cover the whole page, not just the navbar: Lenis turns off
+        // native smooth scrolling (html.lenis), so any anchor left unhandled
+        // - the hero's "See How It Works", for one - would jump instantly.
+        document.querySelectorAll('a[href^="#"]').forEach(link => {
             link.addEventListener('click', function (e) {
                 const href = this.getAttribute('href');
-                if (!href || !href.startsWith('#')) return;
+
+                // a bare "#" carrying its own handler is a button, not a
+                // destination - the Coming Soon triggers are written that way
+                if (href === '#' && this.hasAttribute('onclick')) return;
+
                 e.preventDefault();
 
                 if (href === '#') {
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    lenis.scrollTo(0);
                     return;
                 }
 
                 const targetSection = document.querySelector(href);
                 if (!targetSection) return;
 
+                // measured per click so the offset tracks the bar's real height
                 const offset = (navbar ? navbar.offsetHeight : 0) + 12;
-                const top = targetSection.getBoundingClientRect().top + window.scrollY - offset;
-                window.scrollTo({ top: Math.max(0, top), behavior: 'smooth' });
+                lenis.scrollTo(targetSection, { offset: -offset });
             });
         });
 
@@ -3068,7 +3116,7 @@
         }
     </style>
 
-    <div class="cs-modal-overlay" id="comingSoonModal" role="dialog" aria-modal="true" aria-labelledby="csTitle">
+    <div class="cs-modal-overlay" id="comingSoonModal" data-lenis-prevent role="dialog" aria-modal="true" aria-labelledby="csTitle">
         <div class="cs-modal">
             <button class="cs-close" onclick="closeComingSoon()" aria-label="Close">&times;</button>
             <div class="cs-hero">
@@ -3092,10 +3140,12 @@
         function openComingSoon(e) {
             if (e) e.preventDefault();
             csModal.classList.add('active');
+            lenis.stop();
         }
 
         function closeComingSoon() {
             csModal.classList.remove('active');
+            lenis.start();
         }
 
         // Close on overlay click
